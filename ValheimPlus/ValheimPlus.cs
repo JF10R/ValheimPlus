@@ -10,7 +10,6 @@ using ServerSync;
 using ValheimPlus.Configurations;
 using ValheimPlus.GameClasses;
 using ValheimPlus.RPC;
-using ValheimPlus.UI;
 
 namespace ValheimPlus
 {
@@ -126,8 +125,6 @@ namespace ValheimPlus
 
                 // Create VPlus dir if it does not exist.
                 if (!Directory.Exists(VPlusDataDirectoryPath)) Directory.CreateDirectory(VPlusDataDirectoryPath);
-
-                VPlusSettings.Load();
 
                 //Map Sync Save Timer
                 if (ZNet.m_isServer && Configuration.Current.Map.IsEnabled &&
