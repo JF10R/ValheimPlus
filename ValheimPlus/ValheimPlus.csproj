@@ -216,6 +216,7 @@
     <Compile Include="GameClasses\Growup.cs" />
     <Compile Include="GameClasses\InventoryGrid.cs" />
     <Compile Include="GameClasses\LuredWisp.cs" />
+    <Compile Include="GameClasses\Menu.cs" />
     <Compile Include="GameClasses\PickableItem.cs" />
     <Compile Include="GameClasses\PlayerProfile.cs" />
     <Compile Include="GameClasses\Procreation.cs" />

@@ -24,10 +24,14 @@ namespace ValheimPlus.Configurations
         private static bool atMainMenu = true;
         private static bool legacyOverride;
         private static bool readyForEdit = true;
+        private static bool windowShown;
         private static bool dirty;
 
         /// <summary>Whether a settings change would be accepted right now.</summary>
         public static bool ReadyForEdit => readyForEdit;
+
+        /// <summary>True while the settings window is open in a world, see Menu_IsVisible_Patch.</summary>
+        public static bool BlocksGameInput => windowShown && !atMainMenu;
 
         public static void Install(ConfigFile config, List<BaseConfig> sections, bool legacyOverrideActive)
         {
@@ -130,8 +134,10 @@ namespace ValheimPlus.Configurations
 
         private static void OnDisplayingWindowChanged(object sender, object args)
         {
+            windowShown = (bool)displayingWindow.GetValue(plugin, null);
+
             // Only the close is interesting; the window has no commit step of its own.
-            if ((bool)displayingWindow.GetValue(plugin, null)) return;
+            if (windowShown) return;
             if (!dirty) return;
 
             if (!readyForEdit)
