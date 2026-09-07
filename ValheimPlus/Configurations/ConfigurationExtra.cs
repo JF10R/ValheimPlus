@@ -15,25 +15,6 @@ namespace ValheimPlus.Configurations
 {
     public class ConfigurationExtra
     {
-        public static string GetServerHashFor(Configuration config)
-        {
-            var serialized = "";
-            foreach (var prop in typeof(Configuration).GetProperties())
-            {
-                var keyName = prop.Name;
-                var method = prop.PropertyType.GetMethod("ServerSerializeSection", BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-
-                if (method != null)
-                {
-                    var instance = prop.GetValue(config, null);
-                    string result = (string)method.Invoke(instance, new object[] { });
-                    serialized += result;
-                }
-            }
-
-            return Helper.CreateMD5(serialized);
-        }
-
         public static string ConfigIniPath = Path.GetDirectoryName(Paths.BepInExConfigPath) + Path.DirectorySeparatorChar + "valheim_plus.cfg";
 
         private static string GetCurrentWebIniFile()

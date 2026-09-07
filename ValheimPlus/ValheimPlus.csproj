@@ -176,6 +176,10 @@
     <Compile Include="GameClasses\Bed.cs" />
     <Compile Include="GameClasses\Beehive.cs" />
     <Compile Include="Configurations\BaseConfig.cs" />
+    <Compile Include="Configurations\BepInExConfig.cs" />
+    <Compile Include="Configurations\ConfigSyncGlue.cs" />
+    <Compile Include="Configurations\ConfigurationManagerAttributes.cs" />
+    <Compile Include="Configurations\ConfigurationManagerWatcher.cs" />
     <Compile Include="Configurations\Configuration.cs" />
     <Compile Include="Configurations\ConfigurationExtra.cs" />
     <Compile Include="Configurations\Sections\AdvancedBuildingModeConfiguration.cs" />
