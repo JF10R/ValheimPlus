@@ -1,21 +1,4 @@
 {
-	"ValheimPlus": {
-		"description": "",
-		"icon": "fa fa-list",
-		"description_website": "Specifically about the internal settings of Valheim Plus.",
-		"entries": {
-			"enabled": {
-				"description": "Change true to false to disable this section",
-				"defaultValue": "true",
-				"defaultType": "bool"
-			},
-			"mainMenuLogo": {
-				"description": "Display the Valheim Plus logo in the main menu",
-				"defaultValue": "true",
-				"defaultType": "bool"
-			}
-		}
-	},
 	"AdvancedBuildingMode": {
 		"description": "https://docs.unity3d.com/ScriptReference/KeyCode.html <- a list of keycodes",
 		"icon": "fa fa-archway",
@@ -1323,11 +1306,6 @@
 			"serverSyncsConfig": {
 				"description": "Changes whether the server will force it's config on clients that connect. Only affects servers.",
 				"defaultValue": "true",
-				"defaultType": "bool"
-			},
-			"serverSyncHotkeys": {
-				"description": "If false allows you to keep your own defined hotkeys instead of synchronising the ones declared for the server. Sections need to be enabled in your local configuration to load hotkeys. This is a client side setting and not affected by server settings.",
-				"defaultValue": "false",
 				"defaultType": "bool"
 			}
 		}

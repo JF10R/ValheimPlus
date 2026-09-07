@@ -105,11 +105,13 @@ Finally, after ValheimPlus has loaded, at some point Valheim itself will log its
 
 ## Configuration
 
-Locate the configuration file and edit it with a text editor.
+With [Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager) installed, press F1 at the main menu and edit the settings there. Settings are read-only while a world is loaded, because most of them only take effect when the game starts.
+
+Without it, locate the configuration file and edit it with a text editor. It is created the first time you run the game.
 
 ### File Location
 | Installation Method | Location                                                                                                                                                                 |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Manual Installation | `<game folder>/BepInEx/config/valheim_plus.cfg`                                                                                                                          |
-| R2ModMan            | `%APPDATA%/r2modmanPlus-local/Valheim/profiles/<profile_name>/BepInEx/config/valheim_plus.cfg` (replace `<profile_name>` with the name of your profile)                  |
-| Thunderstore        | `%APPDATA%/Thunderstore Mod Manager/DataFolder/Valheim/profiles/<profile_name>/BepInEx/config/valheim_plus.cfg` (replace `<profile_name>` with the name of your profile) |
+| Manual Installation | `<game folder>/BepInEx/config/org.bepinex.plugins.valheim_plus.cfg`                                                                                                                          |
+| R2ModMan            | `%APPDATA%/r2modmanPlus-local/Valheim/profiles/<profile_name>/BepInEx/config/org.bepinex.plugins.valheim_plus.cfg` (replace `<profile_name>` with the name of your profile)                  |
+| Thunderstore        | `%APPDATA%/Thunderstore Mod Manager/DataFolder/Valheim/profiles/<profile_name>/BepInEx/config/org.bepinex.plugins.valheim_plus.cfg` (replace `<profile_name>` with the name of your profile) |

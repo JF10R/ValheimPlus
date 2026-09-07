@@ -329,7 +329,7 @@ Installation instructions can be found [here](https://github.com/Grantapher/Valh
 1. Download the [latest package called WindowsClient.zip over this link](https://github.com/Grantapher/ValheimPlus/releases/latest/). _(Scroll down and click "assets")_
 2. Locate your game folder manually or start Steam client and right-click the Valheim game in your Steam library and select Manage -> browse local files for Steam to open your game folder.
 3. Extract the contents of the .zip file into the game folder.
-4. Open valheim_plus.cfg under BepInEx\config with any text editor and configure the mod to your needs.
+4. Configure the mod to your needs, see [Configuration File](#configuration-file) below.
 
 **Please read the section about Server Config & Version Control (About Version Enforcement) below.**
 
@@ -339,7 +339,7 @@ This guide does not cover how to create a dedicated server. These are the steps 
 
 1. Download the [latest package called WindowsServer.zip over this link](https://github.com/Grantapher/ValheimPlus/releases/latest/). _(Scroll down and click "assets")_
 2. Extract the contents of the .zip file into your root server folder.
-3. Open valheim_plus.cfg under BepInEx\config with any text editor and configure the mod to your needs.
+3. Configure the mod to your needs, see [Configuration File](#configuration-file) below.
 
 **Please read the section about Server Config & Version Control (About Version Enforcement) below.**
 
@@ -412,15 +412,15 @@ This should resolve any issues related. If you continue to have issues, contact 
 
 # Configuration File
 
-The Config file name is supposed to be `valheim_plus.cfg` and it needs to be placed in `BepInEx\config`.
+The config file is `BepInEx\config\org.bepinex.plugins.valheim_plus.cfg`. It is created the first time you start your game or server, so there is nothing to download or copy in.
+
+If you have [Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager) installed you can edit the settings in game instead, from the main menu. Settings are read-only while a world is loaded, because most of them only take effect when the game starts.
 
 You can turn off and on every feature of V+ via the config file, by default all settings are turned off.
 
-By default, the `BepInEx\config\valheim_plus.cfg` is created when you start your game or server the first time.
+Upgrading keeps your settings: new options are added to your file with their defaults, and an older `valheim_plus.cfg` is imported once and then set aside as `valheim_plus.cfg.migrated`.
 
-The configuration of an older version of Valheim Plus will automatically be updated to a newer version.
-
-When hosting a server, the server configuration file overwrites the client's configuration file on connect if you have the `Server` section and the `serverSyncsConfig` option enabled.
+When hosting a server, players who join use the server's settings if you have the `Server` section and the `serverSyncsConfig` option enabled. Their own config file is not modified, and their settings come back when they disconnect. Keybinds, HUD options and field of view always stay the player's own.
 
 Only the server configuration file (located in the server files) needs to be set up when hosting a server with V+ by default.
 
