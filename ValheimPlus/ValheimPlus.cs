@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using ServerSync;
 using ValheimPlus.Configurations;
 using ValheimPlus.GameClasses;
 using ValheimPlus.RPC;
@@ -72,18 +71,6 @@ namespace ValheimPlus
         public const string Repository = "https://github.com/Grantapher/ValheimPlus/releases/latest";
         private const string ApiRepository = "https://api.github.com/repos/grantapher/valheimPlus/releases/latest";
 
-        // Website INI for auto update
-        internal static readonly string IniFile =
-            $"https://github.com/Grantapher/ValheimPlus/releases/download/{FullVersion}/valheim_plus.cfg";
-
-        // mod fails to load when this type is correctly specified as VersionCheck,
-        // so we'll just cast it as needed instead.
-        private static readonly object VersionCheck = new VersionCheck(ValheimPlusGuid)
-        {
-            DisplayName = "Valheim Plus",
-            CurrentVersion = NumericVersion,
-            MinimumRequiredVersion = MinRequiredNumericVersion,
-        };
 
         // Awake is called once when both the game and the plug-in are loaded
         private void Awake()
@@ -106,14 +93,10 @@ namespace ValheimPlus
 
             Logger.LogInfo("Trying to load the configuration file");
 
-            if (ConfigurationExtra.LoadSettings() != true)
+            try
             {
-                Logger.LogError("Error while loading configuration file.");
-            }
-            else
-            {
-                Logger.LogInfo("Configuration file loaded successfully.");
-
+                BepInExConfig.Load(Config);
+                Logger.LogInfo($"Configuration loaded successfully from '{Config.ConfigFilePath}'.");
 
                 PatchAll();
 
@@ -139,6 +122,10 @@ namespace ValheimPlus
                 }
 
                 Logger.LogInfo($"ValheimPlus done loading.");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Error while loading the configuration: {e}");
             }
         }
 
@@ -212,8 +199,8 @@ namespace ValheimPlus
                         prefix: new HarmonyMethod(typeof(ChangeSteamServerVariables).GetMethod("Prefix")));
                 }
 
-                // enable mod enforcement with VersionCheck from ServerSync
-                ((VersionCheck)VersionCheck).ModRequired = Configuration.Current.Server.enforceMod;
+                // enable mod enforcement with the VersionCheck that ConfigSync owns
+                ConfigSyncGlue.SetModRequired(Configuration.Current.Server.enforceMod);
                 Logger.LogInfo("Patches successfully applied.");
             }
             catch (Exception)

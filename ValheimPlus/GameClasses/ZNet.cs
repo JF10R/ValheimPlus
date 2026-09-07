@@ -36,21 +36,12 @@ namespace ValheimPlus.GameClasses
     }
 
     /// <summary>
-    /// Sync server client configuration
+    /// Alter the server player limit
     /// </summary>
     [HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
-    public static class ConfigServerSync
+    public static class ZNet_RPC_PeerInfo_Transpiler
     {
         private static MethodInfo method_ZNet_GetNrOfPlayers = AccessTools.Method(typeof(ZNet), nameof(ZNet.GetNrOfPlayers));
-
-        private static void Postfix(ref ZNet __instance)
-        {
-            if (!ZNet.m_isServer)
-            {
-                ValheimPlusPlugin.Logger.LogInfo("-------------------- SENDING VPLUGCONFIGSYNC REQUEST");
-                ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), "VPlusConfigSync", new object[] { new ZPackage() });
-            }
-        }
 
         /// <summary>
         /// Alter server player limit
@@ -78,24 +69,33 @@ namespace ValheimPlus.GameClasses
     }
 
     /// <summary>
-    /// Load settngs from server instance
+    /// Set up config for a world: register entries for server sync, now that ZNet knows whether this
+    /// game is a server, and stop settings being edited until the world is left
+    /// </summary>
+    [HarmonyPatch(typeof(ZNet), "Awake")]
+    public static class ZNet_Awake_Patch
+    {
+        private static void Postfix()
+        {
+            BepInExConfig.RegisterForServerSync();
+            ConfigurationManagerWatcher.SetInWorld(true);
+        }
+    }
+
+    /// <summary>
+    /// Reset map sync state when leaving a server, and allow settings to be edited again
     /// </summary>
     [HarmonyPatch(typeof(ZNet), "Shutdown")]
-    public static class OnErrorLoadOwnIni
+    public static class ZNet_Shutdown_Patch
     {
         private static void Prefix(ref ZNet __instance)
         {
+            ConfigurationManagerWatcher.SetInWorld(false);
+
             if (!__instance.IsServer())
             {
-                ValheimPlusPlugin.UnpatchSelf();
-
-                // Load the client config file on server ZNet instance exit (server disconnect)
-                if (ConfigurationExtra.LoadSettings() != true)
-                {
-                    ValheimPlusPlugin.Logger.LogError("Error while loading configuration file.");
-                }
-
-                ValheimPlusPlugin.PatchAll();
+                // ServerSync puts this client's own config values back on its own, and the re-patch that
+                // needs to follow is driven by ConfigSyncGlue.SourceOfTruthChanged.
 
                 //We left the server, so reset our map sync check.
                 if (Configuration.Current.Map.IsEnabled && Configuration.Current.Map.shareMapProgression)

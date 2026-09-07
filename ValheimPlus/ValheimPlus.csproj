@@ -167,7 +167,6 @@
     <Compile Include="Configurations\Sections\ShieldConfiguration.cs" />
     <Compile Include="Configurations\Sections\SpinningWheelConfiguration.cs" />
     <Compile Include="Configurations\Sections\TameableConfiguration.cs" />
-    <Compile Include="Configurations\Sections\ValheimPlusConfiguration.cs" />
     <Compile Include="Configurations\Sections\WindmillConfiguration.cs" />
     <Compile Include="Configurations\Sections\WispSpawnerConfiguration.cs" />
     <Compile Include="Deconstruct.cs" />
@@ -178,10 +177,10 @@
     <Compile Include="Configurations\BaseConfig.cs" />
     <Compile Include="Configurations\BepInExConfig.cs" />
     <Compile Include="Configurations\ConfigSyncGlue.cs" />
-    <Compile Include="Configurations\ConfigurationManagerAttributes.cs" />
-    <Compile Include="Configurations\ConfigurationManagerWatcher.cs" />
     <Compile Include="Configurations\Configuration.cs" />
     <Compile Include="Configurations\ConfigurationExtra.cs" />
+    <Compile Include="Configurations\ConfigurationManagerAttributes.cs" />
+    <Compile Include="Configurations\ConfigurationManagerWatcher.cs" />
     <Compile Include="Configurations\Sections\AdvancedBuildingModeConfiguration.cs" />
     <Compile Include="Configurations\Sections\AdvancedEditingModeConfiguration.cs" />
     <Compile Include="Configurations\Sections\BeehiveConfiguration.cs" />
@@ -210,6 +209,7 @@
     <Compile Include="Configurations\Sections\StaminaUsageConfiguration.cs" />
     <Compile Include="Configurations\Sections\StaminaConfiguration.cs" />
     <Compile Include="Configurations\Sections\TurretConfiguration.cs" />
+    <Compile Include="Configurations\Sections\ValheimPlusConfiguration.cs" />
     <Compile Include="Configurations\Sections\AutoStackConfiguration.cs" />
     <Compile Include="GameClasses\Character.cs" />
     <Compile Include="GameClasses\CharacterDrop.cs" />
@@ -268,7 +268,6 @@
     <Compile Include="GameClasses\Player.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GameClasses\Game.cs" />
-    <Compile Include="RPC\VPlusConfigSync.cs" />
     <Compile Include="GameClasses\SteamGameServer.cs" />
     <Compile Include="RPC\VPlusMapSync.cs" />
     <Compile Include="GameClasses\Minimap.cs" />
@@ -288,16 +287,12 @@
     <Compile Include="GameClasses\Terminal.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Assets\logo.png" />
     <Content Include="ILRepack.targets" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <EmbeddedResource Include="Assets\logo.png" />
     <EmbeddedResource Include="Assets\Bundles\map-pin-ui" />
-    <!-- Embed default config fallback -->
-    <EmbeddedResource Include="..\valheim_plus.cfg">
-      <Link>Assets\defaults\valheim_plus.cfg</Link>
-    </EmbeddedResource>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

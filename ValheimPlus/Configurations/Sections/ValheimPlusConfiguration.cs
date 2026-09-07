@@ -7,10 +7,8 @@ namespace ValheimPlus.Configurations.Sections
         private const string Section = "ValheimPlus";
 
         private ConfigEntry<bool> mainMenuLogoEntry;
-        private ConfigEntry<bool> disableConfigAutoUpdatesEntry;
 
         public bool mainMenuLogo => mainMenuLogoEntry.Value;
-        public bool disableConfigAutoUpdates => disableConfigAutoUpdatesEntry.Value;
 
         public override void Bind(ConfigFile config)
         {
@@ -18,8 +16,6 @@ namespace ValheimPlus.Configurations.Sections
                 "Change false to true to enable this section.");
             mainMenuLogoEntry = Bind(config, Section, "mainMenuLogo", true,
                 "Display the Valheim Plus logo in the main menu");
-            disableConfigAutoUpdatesEntry = Bind(config, Section, "disableConfigAutoUpdates", false,
-                "Disables configuration file auto updates from GitHub, useful if GitHub is blocked on your network.");
         }
     }
 }
