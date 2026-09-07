@@ -7,6 +7,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -103,9 +104,10 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    "Failed to apply `Chat_AddInworldText_Transpiler`." +
-                    $" This may cause the Chat.forcedCase setting to not function correctly. Exception is:\n{e}");
+                PatchLog.Failed(
+                    nameof(Chat_AddInworldText_Transpiler),
+                    "The `Chat.forcedCase` setting will not work.",
+                    e);
                 return il;
             }
         }

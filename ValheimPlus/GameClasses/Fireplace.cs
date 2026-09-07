@@ -71,7 +71,9 @@ namespace ValheimPlus.GameClasses
                     return il;
                 }
 
-                ValheimPlusPlugin.Logger.LogError("Failed to apply Fireplace_UpdateFireplace_Transpiler");
+                PatchLog.Failed(
+                    nameof(Fireplace_UpdateFireplace_Transpiler),
+                    "Fireplaces will not take fuel from nearby chests.");
 
                 return il;
             }
@@ -162,7 +164,9 @@ namespace ValheimPlus.GameClasses
                 return il.AsEnumerable();
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply Fireplace_Interact_Transpiler");
+            PatchLog.Failed(
+                nameof(Fireplace_Interact_Transpiler),
+                "Fireplaces will not accept fuel past their normal limit.");
 
             return il;
         }

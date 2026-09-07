@@ -6,6 +6,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -108,10 +109,9 @@ namespace ValheimPlus.GameClasses
                 var expected = new[] { 4, 2, 1 };
                 if (!results.SequenceEqual(expected))
                 {
-                    ValheimPlusPlugin.Logger.LogError(
-                        "Failed to apply EnvMan_RescaleDayFraction_Transpiler. " +
-                        "Time.nightDurationModifier may not have been applied correctly. " +
-                        $"Expected [{expected.Join()}] but was [{results.Join()}].");
+                    PatchLog.Failed(
+                        nameof(EnvMan_RescaleDayFraction_Transpiler),
+                        $"`Time.nightDurationModifier` will not work. Expected [{expected.Join()}] but was [{results.Join()}].");
                 }
 
                 return il;
@@ -139,10 +139,9 @@ namespace ValheimPlus.GameClasses
                 var expected = new[] { 1, 0, 0 };
                 if (!results.SequenceEqual(expected))
                 {
-                    ValheimPlusPlugin.Logger.LogError(
-                        "Failed to apply EnvMan_GetMorningStartSec_Transpiler. " +
-                        "Time.nightDurationModifier may not have been applied correctly. " +
-                        $"Expected [{expected.Join()}] but was [{results.Join()}].");
+                    PatchLog.Failed(
+                        nameof(EnvMan_GetMorningStartSec_Transpiler),
+                        $"`Time.nightDurationModifier` will not work. Expected [{expected.Join()}] but was [{results.Join()}].");
                 }
 
                 return il;
@@ -169,10 +168,9 @@ namespace ValheimPlus.GameClasses
                 var expected = new[] { 1, 0, 0 };
                 if (!results.SequenceEqual(expected))
                 {
-                    ValheimPlusPlugin.Logger.LogError(
-                        "Failed to apply EnvMan_SkipToMorning_Transpiler. " +
-                        "Time.nightDurationModifier may not have been applied correctly. " +
-                        $"Expected [{expected.Join()}] but was [{results.Join()}].");
+                    PatchLog.Failed(
+                        nameof(EnvMan_SkipToMorning_Transpiler),
+                        $"`Time.nightDurationModifier` will not work. Expected [{expected.Join()}] but was [{results.Join()}].");
                 }
 
                 return il;

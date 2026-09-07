@@ -140,7 +140,9 @@ namespace ValheimPlus.GameClasses
             }
             if (!found)
             {
-                ValheimPlusPlugin.Logger.LogError("Failed to apply Fermenter_SlowUpdate_Transpiler 1");
+                PatchLog.Failed(
+                    nameof(Fermenter_SlowUpdate_Transpiler),
+                    "Fermenters will not take items from nearby chests.");
                 return instructions;
             }
             found = false;
@@ -155,7 +157,7 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply Fermenter_SlowUpdate_Transpiler 2");
+            PatchLog.Failed(nameof(Fermenter_SlowUpdate_Transpiler), "Fermenters will not tap themselves.");
 
             return instructions;
         }
@@ -224,7 +226,9 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply Fermenter_DelayedTap_Transpiler");
+            PatchLog.Failed(
+                nameof(Fermenter_DelayedTap_Transpiler),
+                "Fermenters will not deposit into nearby chests.");
 
             return instructions;
         }

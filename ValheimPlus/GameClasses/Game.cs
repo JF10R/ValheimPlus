@@ -7,6 +7,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
 using ValheimPlus.RPC;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -106,7 +107,7 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply Game_GetPlayerDifficulty_Patch.Transpiler");
+            PatchLog.Failed(nameof(Game_GetPlayerDifficulty_Patch), "`Game.difficultyScaleRange` will not work.");
 
             return il;
         }

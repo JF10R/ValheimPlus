@@ -49,7 +49,9 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply CookingStation_FindCookableItem_Transpiler");
+            PatchLog.Failed(
+                nameof(CookingStation_FindCookableItem_Transpiler),
+                "Cooking stations will not take food from nearby chests.");
             return il;
         }
 

@@ -8,6 +8,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -232,7 +233,7 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Could not transpile `Inventory.ContainsItemByName`!");
+            PatchLog.Failed(nameof(Inventory_StackAll_Patch), "Stack All will not match items by name.");
             return il.AsEnumerable();
         }
 

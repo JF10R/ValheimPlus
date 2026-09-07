@@ -5,6 +5,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -44,8 +45,9 @@ namespace ValheimPlus.GameClasses
                 return il;
             }
 
-            ValheimPlusPlugin.Logger.LogError(
-                "Couldn't transpile `SE_Rested.GetNearbyComfortPieces` for `Building.pieceComfortRadius` config!");
+            PatchLog.Failed(
+                nameof(Se_Rested_GetNearbyComfortPieces_Transpiler),
+                "`Building.pieceComfortRadius` will not work.");
             return il;
         }
     }

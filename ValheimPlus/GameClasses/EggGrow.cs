@@ -7,6 +7,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
 using Object = UnityEngine.Object;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -36,10 +37,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    $"Failed to apply `{caller}`. " +
-                    "This may cause the `Egg.canStack` config to not function correctly. " +
-                    $"Exception is:\n{e}");
+                PatchLog.Failed(caller, "The `Egg.canStack` setting will not work.", e);
                 return new CodeMatcher(il, generator);
             }
         }
@@ -110,10 +108,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    "Failed to apply `EggGrow_GrowUpdate_Transpiler`. " +
-                    "This may cause the `Egg.canStack` config to not function correctly. " +
-                    $"Exception is:\n{e}");
+                PatchLog.Failed(nameof(EggGrow_GrowUpdate_Transpiler), "The `Egg.canStack` setting will not work.", e);
                 return il;
             }
         }

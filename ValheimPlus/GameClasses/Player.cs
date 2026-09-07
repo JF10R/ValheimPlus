@@ -1065,7 +1065,9 @@ namespace ValheimPlus.GameClasses
 
             if (thisIdx == -1 || callIdx == -1)
             {
-                ValheimPlusPlugin.Logger.LogError("Failed to apply Player_ConsumeResources_Transpiler");
+                PatchLog.Failed(
+                    nameof(Player_ConsumeResources_Transpiler),
+                    "Crafting will not take resources from nearby chests.");
             }
             else
             {

@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -178,7 +179,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError($"Could not apply Player_Humanoid_UpdateEquipment!\n{e}");
+                PatchLog.Failed(nameof(Player_Humanoid_UpdateEquipment), exception: e);
                 return il;
             }
         }

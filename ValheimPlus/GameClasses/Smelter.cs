@@ -323,7 +323,9 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply Smelter_FindCookableItem_Transpiler");
+            PatchLog.Failed(
+                nameof(Smelter_FindCookableItem_Transpiler),
+                "Smelters will not take ore from nearby chests.");
 
             return instructions;
         }

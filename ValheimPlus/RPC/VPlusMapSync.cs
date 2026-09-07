@@ -211,7 +211,7 @@ namespace ValheimPlus.RPC
                                   Path.DirectorySeparatorChar +
                                   ZNet.instance.GetWorldName() + "_mapSync.dat", string.Join(",", mapDataToDisk));
 
-                ValheimPlusPlugin.Logger.LogInfo($"Saved {mapDataToDisk.Count} map points to disk.");
+                ValheimPlusPlugin.Logger.LogDebug($"Saved {mapDataToDisk.Count} map points to disk.");
             }
         }
 

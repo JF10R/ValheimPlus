@@ -6,6 +6,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -164,7 +165,7 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Unable to transpile Pickable.RPC_Pick to patch item yields");
+            PatchLog.Failed(nameof(Pickable_RPC_Pick_Transpiler), "Pickable item yields will be unchanged.");
             return il;
         }
     }

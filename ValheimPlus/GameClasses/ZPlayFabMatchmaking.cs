@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -97,9 +98,10 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    "Failed to alter lobby player limit (ZPlayFabMatchmaking_CreateLobby_Transpiler)." +
-                    $" This may cause the maxPlayers setting to not function correctly. Exception is:\n{e}");
+                PatchLog.Failed(
+                    nameof(ZPlayFabMatchmaking_CreateLobby_Transpiler),
+                    "`Server.maxPlayers` will not work for the lobby.",
+                    e);
                 return il;
             }
         }
@@ -143,9 +145,10 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    "Failed to alter network player limit (ZPlayFabMatchmaking_CreateAndJoinNetwork_Transpiler)." +
-                    $" This may cause the maxPlayers setting to not function correctly. Exception is:\n{e}");
+                PatchLog.Failed(
+                    nameof(ZPlayFabMatchmaking_CreateAndJoinNetwork_Transpiler),
+                    "`Server.maxPlayers` will not work for the network.",
+                    e);
                 return il;
             }
         }

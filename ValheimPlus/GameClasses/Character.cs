@@ -141,7 +141,7 @@ namespace ValheimPlus.GameClasses
                 return il.AsEnumerable();
             }
 
-            ValheimPlusPlugin.Logger.LogError("Unable to transpile Character::UpdateGroundContact to patch fall damage calculation");
+            PatchLog.Failed(nameof(Character_UpdateGroundContact_Transpiler), "Fall damage will be unchanged.");
             return instructions;
         }
 

@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -67,9 +68,10 @@ namespace ValheimPlus.GameClasses
             }
             catch (System.Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    "Failed to apply `Beehive_Awake_Transpiler`." +
-                    $" This may cause the beehive auto-deposit timing fix to not function correctly. Exception is:\n{e}");
+                PatchLog.Failed(
+                    nameof(Beehive_Awake_Transpiler),
+                    "The beehive auto-deposit timing fix will not work.",
+                    e);
                 return il;
             }
         }

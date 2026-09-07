@@ -7,6 +7,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using Splatform;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -54,9 +55,10 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception e)
             {
-                ValheimPlusPlugin.Logger.LogError(
-                    "Failed to apply `Terminal_AddString_Transpiler`." +
-                    $" This may cause the Chat.forcedCase setting to not function correctly. Exception is:\n{e}");
+                PatchLog.Failed(
+                    nameof(Terminal_AddString_Transpiler),
+                    "The `Chat.forcedCase` setting will not work.",
+                    e);
                 return il;
             }
         }

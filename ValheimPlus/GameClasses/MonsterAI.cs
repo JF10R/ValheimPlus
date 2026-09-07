@@ -6,6 +6,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -90,7 +91,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception ex)
             {
-                ValheimPlusPlugin.Logger.LogError($"Failed to apply MonsterAI_UpdateAI_Transpiler. Exception is:\n{ex}");
+                PatchLog.Failed(nameof(MonsterAI_UpdateAI_Transpiler), "`Tameable.ignoreAlerted` will not work.", ex);
             }
 
             return il;

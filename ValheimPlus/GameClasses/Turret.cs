@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -97,16 +98,13 @@ namespace ValheimPlus.GameClasses
             }
 
             if (unlimitedAmmoEnabled && maxAmmoInstructionIndex == -1)
-                ValheimPlusPlugin.Logger.LogError(
-                    "Couldn't transpile `Turret.ShootProjectile` for `Turret.unlimitedAmmo` config!");
+                PatchLog.Failed(nameof(Turret_ShootProjectile_Patch), "`Turret.unlimitedAmmo` will not work.");
 
             if (projectileVelocityEnabled && projectileVelocityInstructionIndex == -1)
-                ValheimPlusPlugin.Logger.LogError(
-                    "Couldn't transpile `Turret.ShootProjectile` for `Turret.projectileVelocity` config!");
+                PatchLog.Failed(nameof(Turret_ShootProjectile_Patch), "`Turret.projectileVelocity` will not work.");
 
             if (projectileAccuracyEnabled && projectileAccuracyInstructionIndex == -1)
-                ValheimPlusPlugin.Logger.LogError(
-                    "Couldn't transpile `Turret.ShootProjectile` for `Turret.projectileAccuracy` config!");
+                PatchLog.Failed(nameof(Turret_ShootProjectile_Patch), "`Turret.projectileAccuracy` will not work.");
 
             return il.AsEnumerable();
         }

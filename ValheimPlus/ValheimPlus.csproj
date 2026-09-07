@@ -254,6 +254,7 @@
     <Compile Include="Utility\GameObjectAssistant.cs" />
     <Compile Include="Utility\InventoryAssistant.cs" />
     <Compile Include="Utility\ListExtensions.cs" />
+    <Compile Include="Utility\PatchLog.cs" />
     <Compile Include="Utility\RPCQueue.cs" />
     <Compile Include="Utility\ZPackageExtensions.cs" />
     <Compile Include="ValheimPlus.cs" />

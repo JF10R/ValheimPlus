@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -37,7 +38,7 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Couldn't transpile `Recipe.GetAmount`!");
+            PatchLog.Failed(nameof(Recipe_GetAmount_Transpiler), "Recipe amounts will be unchanged.");
             return il.AsEnumerable();
         }
 

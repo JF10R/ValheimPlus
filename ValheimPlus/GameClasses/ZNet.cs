@@ -62,7 +62,7 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to alter server player limit (ZNet.RPC_PeerInfo.Transpiler)");
+            PatchLog.Failed(nameof(ZNet_RPC_PeerInfo_Transpiler), "`Server.maxPlayers` will not work.");
 
             return instructions;
         }

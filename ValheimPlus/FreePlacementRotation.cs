@@ -6,6 +6,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus
 {
@@ -44,7 +45,7 @@ namespace ValheimPlus
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Couldn't transpile `Player.UpdatePlacementGhost`!");
+            PatchLog.Failed(nameof(Player_UpdatePlacementGhost_Transpile), "Free placement rotation will not work.");
             return il.AsEnumerable();
         }
 

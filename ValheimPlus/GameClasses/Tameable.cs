@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -155,7 +156,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception ex)
             {
-                ValheimPlusPlugin.Logger.LogError($"Failed to apply Tameable_GetHoverText_Transpiler. Exception is:\n{ex}");
+                PatchLog.Failed(nameof(Tameable_Alerted_Patches), "Tamed creature hover text will be unchanged.", ex);
             }
 
             return il;

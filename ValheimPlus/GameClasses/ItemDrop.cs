@@ -7,6 +7,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -82,7 +83,9 @@ namespace ValheimPlus.GameClasses
                 }
             }
 
-            ValheimPlusPlugin.Logger.LogError("Failed to apply ItemDrop_TimedDestruction_Patch");
+            PatchLog.Failed(
+                nameof(ItemDrop_TimedDestruction_Patch),
+                "Dropped items will use the game's own despawn time.");
 
             return instructions;
         }

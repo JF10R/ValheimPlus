@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 
 namespace ValheimPlus.GameClasses
 {
@@ -144,7 +145,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception ex)
             {
-                ValheimPlusPlugin.Logger.LogError($"Failed to apply Procreation_Procreate_Transpiler. Exception is:\n{ex}");
+                PatchLog.Failed(nameof(Procreation_Procreate_Patch), "`Procreation.ignoreAlerted` will not work.", ex);
             }
 
             return il;
