@@ -168,7 +168,6 @@
     <Compile Include="Configurations\Sections\TameableConfiguration.cs" />
     <Compile Include="Configurations\Sections\WindmillConfiguration.cs" />
     <Compile Include="Configurations\Sections\WispSpawnerConfiguration.cs" />
-    <Compile Include="Deconstruct.cs" />
     <Compile Include="FirstPerson\VPlusFirstPerson.cs" />
     <Compile Include="FreePlacementRotation.cs" />
     <Compile Include="GameClasses\Bed.cs" />
@@ -273,7 +272,6 @@
     <Compile Include="GameClasses\Smelter.cs" />
     <Compile Include="Utility\EmbeddedAsset.cs" />
     <Compile Include="Utility\HttpHelper.cs" />
-    <Compile Include="GameClasses\Version.cs" />
     <Compile Include="GameClasses\Vagon.cs" />
     <Compile Include="GameClasses\WearNTear.cs" />
     <Compile Include="GameClasses\EnvMan.cs" />
