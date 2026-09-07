@@ -102,7 +102,7 @@ namespace ValheimPlus.GameClasses
                 // Only make the call if we're actually adding fuel,
                 // otherwise the fuel adding animation plays every second.
                 __instance.m_nview.InvokeRPC("RPC_AddFuelAmount", (float)addedFuel);
-                ValheimPlusPlugin.Logger.LogInfo(
+                ValheimPlusPlugin.Logger.LogDebug(
                     $"Added {addedFuel} fuel({fuelItemData.m_shared.m_name}) in {__instance.m_name}");
 
                 return addedFuel;

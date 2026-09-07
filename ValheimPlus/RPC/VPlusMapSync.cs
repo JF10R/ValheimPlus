@@ -37,7 +37,7 @@ namespace ValheimPlus.RPC
                         }
                     }
 
-                    ValheimPlusPlugin.Logger.LogInfo($"Received {exploredAreaCount} map ranges from peer #{sender}.");
+                    ValheimPlusPlugin.Logger.LogDebug($"Received {exploredAreaCount} map ranges from peer #{sender}.");
 
                     //Send Ack
                     VPlusAck.SendAck(sender);
@@ -65,9 +65,8 @@ namespace ValheimPlus.RPC
                     });
                 }
 
-                ValheimPlusPlugin.Logger.LogInfo($"-------------------------- Packages: {packages.Count}");
 
-                ValheimPlusPlugin.Logger.LogInfo($"Sent map updates to all clients ({serverExploredAreas.Count} map ranges, {packages.Count} chunks)");
+                ValheimPlusPlugin.Logger.LogDebug($"Sent map updates to all clients ({serverExploredAreas.Count} map ranges, {packages.Count} chunks)");
             }
             else //Client
             {
@@ -98,21 +97,20 @@ namespace ValheimPlus.RPC
                     //Update fog texture
                     Minimap.instance.m_fogTexture.Apply();
 
-                    ValheimPlusPlugin.Logger.LogInfo($"I got {exploredAreaCount} map ranges from the server!");
+                    ValheimPlusPlugin.Logger.LogDebug($"I got {exploredAreaCount} map ranges from the server!");
 
                     //Send Ack
                     VPlusAck.SendAck(sender);
                 }
                 else
                 {
-                    ValheimPlusPlugin.Logger.LogInfo("Server has no explored areas to sync, continuing.");
+                    ValheimPlusPlugin.Logger.LogDebug("Server has no explored areas to sync, continuing.");
                 }
             }
         }
 
         public static void SendMapToServer()
         {
-            ValheimPlusPlugin.Logger.LogInfo("-------------------- SENDING VPLUSMAPSYNC DATA");
 
             //Convert exploration data to ranges
             List<MapRange> exploredAreas = ExplorationDataToMapRanges(Minimap.instance.m_explored);
@@ -144,7 +142,7 @@ namespace ValheimPlus.RPC
                     });
                 }
 
-                ValheimPlusPlugin.Logger.LogInfo($"Sent my map data to the server ({exploredAreas.Count} map ranges, {packages.Count} chunks)");
+                ValheimPlusPlugin.Logger.LogDebug($"Sent my map data to the server ({exploredAreas.Count} map ranges, {packages.Count} chunks)");
             }
         }
 

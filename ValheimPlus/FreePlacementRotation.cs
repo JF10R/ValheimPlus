@@ -123,7 +123,7 @@ namespace ValheimPlus
                 }
 
                 playerData.PlaceRotation = ClampAngles(playerData.PlaceRotation);
-                ValheimPlusPlugin.Logger.LogInfo("Angle " + playerData.PlaceRotation);
+                ValheimPlusPlugin.Logger.LogDebug("Angle " + playerData.PlaceRotation);
             }
 
             private static void SyncRotationWithTargetInFront(Player __instance, KeyCode keyCode, bool perpendicular)
@@ -144,7 +144,7 @@ namespace ValheimPlus
                 playerData.Opposite = !playerData.Opposite;
 
                 playerData.PlaceRotation = rotation.eulerAngles;
-                ValheimPlusPlugin.Logger.LogInfo("Sync Angle " + playerData.PlaceRotation);
+                ValheimPlusPlugin.Logger.LogDebug("Sync Angle " + playerData.PlaceRotation);
             }
         }
 

@@ -90,7 +90,7 @@ namespace ValheimPlus.GameClasses
             }
             catch (Exception ex)
             {
-                ValheimPlusPlugin.Logger.LogError(ex);
+                ValheimPlusPlugin.Logger.LogError($"Failed to apply MonsterAI_UpdateAI_Transpiler. Exception is:\n{ex}");
             }
 
             return il;

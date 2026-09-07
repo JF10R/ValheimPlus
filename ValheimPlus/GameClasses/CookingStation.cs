@@ -157,7 +157,7 @@ namespace ValheimPlus.GameClasses
             if (addedFuel < 1) return;
 
             for (int i = 0; i < addedFuel; i++) __instance.m_nview.InvokeRPC("RPC_AddFuel");
-            ValheimPlusPlugin.Logger.LogInfo(
+            ValheimPlusPlugin.Logger.LogDebug(
                 $"Added {addedFuel} fuel({fuelItemData.m_shared.m_name}) in {__instance.m_name}");
         }
     }

@@ -213,7 +213,7 @@ namespace ValheimPlus
 
                 component1.ClaimOwnership();
                 ZNetScene.instance.Destroy(HitPiece.gameObject);
-                ValheimPlusPlugin.Logger.LogInfo("AEM: Executed.");
+                ValheimPlusPlugin.Logger.LogDebug("AEM: Executed.");
 
                 exitMode();
                 return;
