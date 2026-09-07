@@ -33,7 +33,7 @@ namespace ValheimPlus.GameClasses
     {
         private static void Postfix(ref bool __result)
         {
-            if (Configuration.Current.Building.IsEnabled && Configuration.Current.StructuralIntegrity.disableStructuralIntegrity)
+            if (Configuration.Current.StructuralIntegrity.IsEnabled && Configuration.Current.StructuralIntegrity.disableStructuralIntegrity)
             {
                 __result = true;
             }

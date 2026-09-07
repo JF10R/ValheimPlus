@@ -58,6 +58,8 @@ namespace ValheimPlus.GameClasses
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
+            if (!Configuration.Current.Server.IsEnabled) return instructions;
+
             List<CodeInstruction> il = instructions.ToList();
 
             for (int i = 0; i < il.Count; i++)
@@ -138,7 +140,8 @@ namespace ValheimPlus.GameClasses
                 Minimap.instance.WorldToPixel(pos, out int pixelX, out int pixelY);
 
                 int radiusPixels =
-                    (int)Mathf.Ceil(Configuration.Current.Map.exploreRadius / Minimap.instance.m_pixelSize);
+                    (int)Mathf.Ceil(Mathf.Min(Configuration.Current.Map.exploreRadius,
+                        ChangeMapBehavior.MaxExploreRadius) / Minimap.instance.m_pixelSize);
 
                 // todo this looks like it can be optimized better
                 for (int y = pixelY - radiusPixels; y <= pixelY + radiusPixels; ++y)

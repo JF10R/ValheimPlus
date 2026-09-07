@@ -31,10 +31,13 @@ namespace ValheimPlus.GameClasses
     [HarmonyPatch(typeof(Minimap), "UpdateExplore")]
     public static class ChangeMapBehavior
     {
+        /// <summary>
+        /// Past this the explore loop gets unreasonably expensive, so the configured value is capped.
+        /// </summary>
+        internal const float MaxExploreRadius = 10000f;
+
         private static void Prefix(ref float dt, ref Player player, ref Minimap __instance, ref float ___m_exploreTimer, ref float ___m_exploreInterval)
         {
-            if (Configuration.Current.Map.exploreRadius > 10000) Configuration.Current.Map.exploreRadius = 10000;
-
             if (!Configuration.Current.Map.IsEnabled) return;
 
             if (Configuration.Current.Map.shareMapProgression)
@@ -47,14 +50,14 @@ namespace ValheimPlus.GameClasses
                     {
                         foreach (ZNet.PlayerInfo m_Player in ZNet.instance.m_players)
                         {
-                            HookExplore.call_Explore(__instance, m_Player.m_position, Configuration.Current.Map.exploreRadius);
+                            HookExplore.call_Explore(__instance, m_Player.m_position, Mathf.Min(Configuration.Current.Map.exploreRadius, MaxExploreRadius));
                         }
                     }
                 }
             }
 
             // Always reveal for your own, we do this non the less to apply the potentially bigger exploreRadius
-            HookExplore.call_Explore(__instance, player.transform.position, Configuration.Current.Map.exploreRadius);
+            HookExplore.call_Explore(__instance, player.transform.position, Mathf.Min(Configuration.Current.Map.exploreRadius, MaxExploreRadius));
         }
     }
 

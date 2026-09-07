@@ -1285,7 +1285,7 @@ namespace ValheimPlus.GameClasses
         [HarmonyPrefix]
         private static void Prefix(ref float ___m_teleportTimer, ref bool ___m_teleporting, ref Vector3 ___m_teleportTargetPos)
         {
-            if (Configuration.Current.Player.disableEightSecondTeleport && ZNetScene.instance.IsAreaReady(___m_teleportTargetPos) && ___m_teleporting)
+            if (Configuration.Current.Player.IsEnabled && Configuration.Current.Player.disableEightSecondTeleport && ZNetScene.instance.IsAreaReady(___m_teleportTargetPos) && ___m_teleporting)
             {
                 ___m_teleportTimer += Helper.Clamp(8.1f - ___m_teleportTimer, 0, float.MaxValue);
             }
