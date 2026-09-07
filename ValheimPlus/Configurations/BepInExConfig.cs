@@ -111,13 +111,9 @@ namespace ValheimPlus.Configurations
 
             serverSyncRegistered = true;
 
-            // Whether to take a server's hotkeys is the client's call, so a server always offers its
-            // own: ServerSync drops unsynchronized entries when it builds the package to send, and
-            // again when a client builds its lookup of what it will accept.
-            var syncHotkeys = ZNet.m_isServer || Configuration.Current.Server.serverSyncHotkeys;
             var registered = 0;
 
-            foreach (var section in Sections) registered += section.RegisterForServerSync(syncHotkeys);
+            foreach (var section in Sections) registered += section.RegisterForServerSync();
 
             ValheimPlusPlugin.Logger.LogInfo($"Registered {registered} settings for server sync.");
         }

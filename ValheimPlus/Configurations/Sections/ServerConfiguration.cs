@@ -10,13 +10,11 @@ namespace ValheimPlus.Configurations.Sections
         private ConfigEntry<bool> disableServerPasswordEntry;
         private ConfigEntry<bool> enforceModEntry;
         private ConfigEntry<bool> serverSyncsConfigEntry;
-        private ConfigEntry<bool> serverSyncHotkeysEntry;
 
         public int maxPlayers => maxPlayersEntry.Value;
         public bool disableServerPassword => disableServerPasswordEntry.Value; // todo supposedly not working correctly
         public bool enforceMod => enforceModEntry.Value;
         public bool serverSyncsConfig => serverSyncsConfigEntry.Value;
-        public bool serverSyncHotkeys => serverSyncHotkeysEntry.Value;
 
         public override void Bind(ConfigFile config)
         {
@@ -30,8 +28,6 @@ namespace ValheimPlus.Configurations.Sections
                 "This settings add a version control check to make sure that people that try to join your game or the server you try to join has V+ installed\nWE HEAVILY RECOMMEND TO NEVER DISABLE THIS!");
             serverSyncsConfigEntry = Bind(config, Section, "serverSyncsConfig", true,
                 "Changes whether the server will force it's config on clients that connect. Only affects servers.\nWE HEAVILY RECOMMEND TO NEVER DISABLE THIS!");
-            serverSyncHotkeysEntry = BindLocal(config, Section, "serverSyncHotkeys", false,
-                "If false allows you to keep your own defined hotkeys instead of synchronising the ones declared for the server.\nSections need to be enabled in your local configuration to load hotkeys.\nThis is a client side setting and not affected by server settings.");
         }
     }
 }

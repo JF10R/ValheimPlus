@@ -17,7 +17,7 @@ namespace ValheimPlus.Configurations
         private readonly ConfigurationManagerAttributes enabledAttributes = new() { Order = int.MaxValue };
 
         /// <summary>One call per entry, run when this section is handed to ServerSync.</summary>
-        private readonly List<Action<bool>> syncRegistrations = new();
+        private readonly List<Action> syncRegistrations = new();
 
         private string sectionName;
         private ConfigEntry<bool> enabledEntry;
@@ -34,41 +34,30 @@ namespace ValheimPlus.Configurations
             sectionName = section;
             enabledEntry = config.Bind(section, "enabled", defaultValue,
                 new ConfigDescription(description, null, enabledAttributes));
-            syncRegistrations.Add(_ => ConfigSyncGlue.Register(enabledEntry, true));
+            syncRegistrations.Add(() => ConfigSyncGlue.Register(enabledEntry, true));
         }
 
-        /// <summary>Binds a setting, which a server pushes to its clients like any other.</summary>
+        /// <summary>Binds a setting. A server pushes it to its clients unless it is a keybind.</summary>
         protected ConfigEntry<T> Bind<T>(
             ConfigFile config, string section, string key, T defaultValue, string description)
-        {
-            return Bind(config, section, key, defaultValue, description, local: false);
-        }
-
-        /// <summary>Binds a setting that is registered with ServerSync but never takes its value.</summary>
-        protected ConfigEntry<T> BindLocal<T>(
-            ConfigFile config, string section, string key, T defaultValue, string description)
-        {
-            return Bind(config, section, key, defaultValue, description, local: true);
-        }
-
-        private ConfigEntry<T> Bind<T>(ConfigFile config, string section, string key, T defaultValue,
-            string description, bool local)
         {
             sectionName = section;
             var entry = config.Bind(section, key, defaultValue,
                 new ConfigDescription(description, null, attributes));
 
-            // Taking a server's hotkeys is the client's call.
-            syncRegistrations.Add(syncHotkeys => ConfigSyncGlue.Register(entry,
-                !local && (syncHotkeys || typeof(T) != typeof(KeyCode))));
+            // Keybinds stay personal, so they are neither sent to nor taken from a server.
+            if (typeof(T) != typeof(KeyCode))
+            {
+                syncRegistrations.Add(() => ConfigSyncGlue.Register(entry, true));
+            }
 
             return entry;
         }
 
         /// <summary>Hands every entry in this section to ServerSync. Returns how many were registered.</summary>
-        internal int RegisterForServerSync(bool syncHotkeys)
+        internal int RegisterForServerSync()
         {
-            foreach (var register in syncRegistrations) register(syncHotkeys);
+            foreach (var register in syncRegistrations) register();
             return syncRegistrations.Count;
         }
 
