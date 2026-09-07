@@ -76,9 +76,12 @@ namespace ValheimPlus
         private void Awake()
         {
             Logger = base.Logger;
-            Logger.LogInfo($"Valheim game version: {Version.GetVersionString()}");
-            Logger.LogInfo($"Valheim Plus full version: {FullVersion}");
-            Logger.LogInfo($"Valheim Plus dll file location: '{GetType().Assembly.Location}'");
+            Logger.LogDebug($"Valheim game version: {Version.GetVersionString()}");
+            // BepInEx already logs the numeric version, so this only earns its place
+            // when there is a suffix it does not carry.
+            Logger.Log(VersionExtra.Length > 0 ? LogLevel.Info : LogLevel.Debug,
+                $"Valheim Plus full version: {FullVersion}");
+            Logger.LogDebug($"Valheim Plus dll file location: '{GetType().Assembly.Location}'");
 
             var tooOld = IsGameVersionTooOld();
             if (tooOld) LogTooOld();
@@ -91,12 +94,10 @@ namespace ValheimPlus
                 return;
             }
 
-            Logger.LogInfo("Trying to load the configuration file");
-
             try
             {
                 BepInExConfig.Load(Config);
-                Logger.LogInfo($"Configuration loaded successfully from '{Config.ConfigFilePath}'.");
+                Logger.LogDebug($"Configuration loaded successfully from '{Config.ConfigFilePath}'.");
 
                 PatchAll();
 
@@ -107,7 +108,7 @@ namespace ValheimPlus
                 }
                 else
                 {
-                    Logger.LogInfo($"ValheimPlus [{FullVersion}] is up to date.");
+                    Logger.LogDebug($"ValheimPlus [{FullVersion}] is up to date.");
                 }
 
                 // Create VPlus dir if it does not exist.
@@ -121,7 +122,6 @@ namespace ValheimPlus
                     MapSyncSaveTimer.Elapsed += (_, _) => VPlusMapSync.SaveMapDataToDisk();
                 }
 
-                Logger.LogInfo($"ValheimPlus done loading.");
             }
             catch (Exception e)
             {
@@ -182,7 +182,7 @@ namespace ValheimPlus
 
         public static void PatchAll()
         {
-            Logger.LogInfo("Applying patches.");
+            Logger.LogDebug("Applying patches.");
             try
             {
                 // handles annotations
@@ -201,7 +201,7 @@ namespace ValheimPlus
 
                 // enable mod enforcement with the VersionCheck that ConfigSync owns
                 ConfigSyncGlue.SetModRequired(Configuration.Current.Server.enforceMod);
-                Logger.LogInfo("Patches successfully applied.");
+                Logger.LogDebug("Patches successfully applied.");
             }
             catch (Exception)
             {
@@ -244,11 +244,11 @@ namespace ValheimPlus
 
         public static void UnpatchSelf()
         {
-            Logger.LogInfo("Unpatching.");
+            Logger.LogDebug("Unpatching.");
             try
             {
                 Harmony.UnpatchSelf();
-                Logger.LogInfo("Successfully unpatched.");
+                Logger.LogDebug("Successfully unpatched.");
             }
             catch (Exception e)
             {

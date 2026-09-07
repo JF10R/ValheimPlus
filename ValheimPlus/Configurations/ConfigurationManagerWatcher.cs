@@ -49,7 +49,7 @@ namespace ValheimPlus.Configurations
             if (!Chainloader.PluginInfos.TryGetValue(ConfigurationManagerGuid, out var info) ||
                 info?.Instance == null)
             {
-                ValheimPlusPlugin.Logger.LogInfo(
+                ValheimPlusPlugin.Logger.LogDebug(
                     "Configuration Manager is not installed. Settings can still be changed by editing " +
                     "the config file, which takes effect on the next launch.");
                 return;
@@ -77,7 +77,7 @@ namespace ValheimPlus.Configurations
                 windowChanged.AddEventHandler(plugin,
                     Delegate.CreateDelegate(windowChanged.EventHandlerType, handler.Target, handler.Method));
 
-                ValheimPlusPlugin.Logger.LogInfo(readyForEdit
+                ValheimPlusPlugin.Logger.LogDebug(readyForEdit
                     ? "Configuration Manager found, settings are editable at the main menu."
                     : "Configuration Manager found, but the legacy config file is overriding settings, " +
                       "so they are read-only.");
@@ -143,13 +143,13 @@ namespace ValheimPlus.Configurations
             if (!readyForEdit)
             {
                 // Normally ServerSync applying a server's values, which reapplies patches itself.
-                ValheimPlusPlugin.Logger.LogInfo(
+                ValheimPlusPlugin.Logger.LogDebug(
                     "Settings changed while they are read-only, so patches were left alone.");
                 return;
             }
 
             dirty = false;
-            ValheimPlusPlugin.Logger.LogInfo("Configuration changed, re-applying patches.");
+            ValheimPlusPlugin.Logger.LogDebug("Configuration changed, re-applying patches.");
             ValheimPlusPlugin.UnpatchSelf();
             ValheimPlusPlugin.PatchAll();
         }

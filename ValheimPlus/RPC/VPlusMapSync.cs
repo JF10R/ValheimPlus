@@ -173,7 +173,7 @@ namespace ValheimPlus.RPC
                         }
                     }
 
-                    ValheimPlusPlugin.Logger.LogInfo($"Loaded {dataPoints.Length} map points from disk.");
+                    ValheimPlusPlugin.Logger.LogDebug($"Loaded {dataPoints.Length} map points from disk.");
                 }
                 catch (Exception ex)
                 {

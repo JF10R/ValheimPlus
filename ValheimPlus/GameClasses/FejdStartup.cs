@@ -37,7 +37,7 @@ namespace ValheimPlus.GameClasses
             __instance.m_versionLabel.GetComponent<RectTransform>().sizeDelta = new Vector2(900, 30);
             __instance.m_versionLabel.text += "\nValheimPlus " + ValheimPlusPlugin.FullVersion + " (Grantapher)";
 
-            ValheimPlusPlugin.Logger.LogInfo($"Version text: \"{__instance.m_versionLabel.text}\"".Replace("\n", ", "));
+            ValheimPlusPlugin.Logger.LogDebug($"Version text: \"{__instance.m_versionLabel.text}\"".Replace("\n", ", "));
         }
     }
 

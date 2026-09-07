@@ -83,7 +83,7 @@ namespace ValheimPlus.Configurations
             // Transpilers read config at patch time, so a source swap needs the patches reapplied.
             ConfigSyncGlue.SourceOfTruthChanged += _ =>
             {
-                ValheimPlusPlugin.Logger.LogInfo("Config source changed, re-applying patches.");
+                ValheimPlusPlugin.Logger.LogDebug("Config source changed, re-applying patches.");
                 ValheimPlusPlugin.UnpatchSelf();
                 ValheimPlusPlugin.PatchAll();
 
@@ -117,7 +117,7 @@ namespace ValheimPlus.Configurations
 
             foreach (var section in Sections) registered += section.RegisterForServerSync();
 
-            ValheimPlusPlugin.Logger.LogInfo($"Registered {registered} settings for server sync.");
+            ValheimPlusPlugin.Logger.LogDebug($"Registered {registered} settings for server sync.");
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace ValheimPlus.Configurations
             {
                 if (mode == LegacyMode.Migrate)
                 {
-                    ValheimPlusPlugin.Logger.LogInfo(
+                    ValheimPlusPlugin.Logger.LogDebug(
                         $"Found a legacy config at '{ConfigurationExtra.ConfigIniPath}', importing its values.");
                 }
 
@@ -208,7 +208,7 @@ namespace ValheimPlus.Configurations
                 imported++;
             }
 
-            ValheimPlusPlugin.Logger.LogInfo($"Imported {imported} settings from the legacy config.");
+            ValheimPlusPlugin.Logger.LogDebug($"Imported {imported} settings from the legacy config.");
             if (failed.Count > 0)
             {
                 ValheimPlusPlugin.Logger.LogWarning(
@@ -261,7 +261,7 @@ namespace ValheimPlus.Configurations
             try
             {
                 File.Move(ConfigurationExtra.ConfigIniPath, retired);
-                ValheimPlusPlugin.Logger.LogInfo(
+                ValheimPlusPlugin.Logger.LogDebug(
                     $"Settings now live in '{config.ConfigFilePath}'. " +
                     $"The old config was kept as '{retired}' and is no longer read.");
             }
