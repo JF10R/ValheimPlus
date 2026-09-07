@@ -121,7 +121,7 @@ cat <<EOF > "$THUNDERSTORE/manifest.json"
     "name": "ValheimPlus_Grantapher_Temporary",
     "version_number": "$(echo "$VERSION" | cut -d'.' -f2-)",
     "website_url": "https://discord.gg/WU69A2JTcn",
-    "description": "A temporary Valheim Plus fork by Grantapher while we wait for the main mod to be updated.",
+    "description": "A (not so) temporary Valheim Plus fork. Provides many configurable game tweaks.",
     "dependencies": [
         "denikson-BepInExPack_Valheim-$BEPINEXPACK_VALHEIM_VERSION"
     ]
