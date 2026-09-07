@@ -261,7 +261,7 @@ namespace ValheimPlus.Configurations
             try
             {
                 File.Move(ConfigurationExtra.ConfigIniPath, retired);
-                ValheimPlusPlugin.Logger.LogDebug(
+                ValheimPlusPlugin.Logger.LogWarning(
                     $"Settings now live in '{config.ConfigFilePath}'. " +
                     $"The old config was kept as '{retired}' and is no longer read.");
             }
