@@ -62,6 +62,8 @@ namespace ValheimPlus.Configurations
                 config.SaveOnConfigSet = true;
             }
 
+            LogNonDefaultSettings(config);
+
             if (mode == LegacyMode.Migrate) RetireLegacyIni(config);
             else if (mode == LegacyMode.Override) WarnLegacyOverride(config);
 
@@ -146,6 +148,22 @@ namespace ValheimPlus.Configurations
                 ValheimPlusPlugin.Logger.LogError(
                     $"Could not read the legacy config, so defaults will be used instead: {e}");
                 return null;
+            }
+        }
+
+        /// <summary>Logs the settings that differ from their default, to help read a user's log.</summary>
+        private static void LogNonDefaultSettings(ConfigFile config)
+        {
+            var changed = config.Keys
+                .Select(definition => new { definition, entry = config[definition] })
+                .Where(x => !Equals(x.entry.BoxedValue, x.entry.DefaultValue))
+                .ToList();
+
+            ValheimPlusPlugin.Logger.LogDebug($"{changed.Count} settings differ from their default:");
+            foreach (var x in changed)
+            {
+                ValheimPlusPlugin.Logger.LogDebug(
+                    $"  [{x.definition.Section}] {x.definition.Key} = {x.entry.BoxedValue}");
             }
         }
 
