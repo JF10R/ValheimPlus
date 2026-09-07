@@ -1,4 +1,4 @@
-using ValheimPlus.Configurations.Sections;
+﻿using ValheimPlus.Configurations.Sections;
 
 namespace ValheimPlus.Configurations
 {
@@ -10,7 +10,6 @@ namespace ValheimPlus.Configurations
         public BedConfiguration Bed { get; set; }
         public BeehiveConfiguration Beehive { get; set; }
         public BuildingConfiguration Building { get; set; }
-        public DeconstructConfiguration Deconstruct { get; set; }
         public InventoryConfiguration Inventory { get; set; }
         public ItemsConfiguration Items { get; set; }
         public FermenterConfiguration Fermenter { get; set; }
@@ -50,7 +49,6 @@ namespace ValheimPlus.Configurations
         public FirstPersonConfiguration FirstPerson { get; internal set; }
         public GridAlignmentConfiguration GridAlignment { get; set; }
         public CraftFromChestConfiguration CraftFromChest { get; set; }
-        public ValheimPlusConfiguration ValheimPlus { get; set; }
         public PlayerProjectileConfiguration PlayerProjectile { get; set; }
         public MonsterProjectileConfiguration MonsterProjectile { get; set; }
         public GameClockConfiguration GameClock { get; set; }
