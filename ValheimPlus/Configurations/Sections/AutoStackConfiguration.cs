@@ -1,12 +1,41 @@
+﻿using BepInEx.Configuration;
+
 namespace ValheimPlus.Configurations.Sections
 {
-    public class AutoStackConfiguration : ServerSyncConfig<AutoStackConfiguration>
+    public class AutoStackConfiguration : BaseConfig
     {
-        public float autoStackAllRange { get; internal set; } = 10;
-        public bool autoStackAllIgnorePrivateAreaCheck { get; internal set; } = false;
-        public bool autoStackAllIgnoreEquipment { get; internal set; } = false;
-        public bool ignoreAmmo { get; internal set; } = false;
-        public bool ignoreFood { get; internal set; } = false;
-        public bool ignoreMead { get; internal set; } = false;
+        private const string Section = "AutoStack";
+
+        private ConfigEntry<float> autoStackAllRangeEntry;
+        private ConfigEntry<bool> autoStackAllIgnorePrivateAreaCheckEntry;
+        private ConfigEntry<bool> autoStackAllIgnoreEquipmentEntry;
+        private ConfigEntry<bool> ignoreAmmoEntry;
+        private ConfigEntry<bool> ignoreFoodEntry;
+        private ConfigEntry<bool> ignoreMeadEntry;
+
+        public float autoStackAllRange => autoStackAllRangeEntry.Value;
+        public bool autoStackAllIgnorePrivateAreaCheck => autoStackAllIgnorePrivateAreaCheckEntry.Value;
+        public bool autoStackAllIgnoreEquipment => autoStackAllIgnoreEquipmentEntry.Value;
+        public bool ignoreAmmo => ignoreAmmoEntry.Value;
+        public bool ignoreFood => ignoreFoodEntry.Value;
+        public bool ignoreMead => ignoreMeadEntry.Value;
+
+        public override void Bind(ConfigFile config)
+        {
+            BindEnabled(config, Section, false,
+                "Set to true to automatically perform the \"Stack All\" action on all chests in range.");
+            autoStackAllRangeEntry = Bind(config, Section, "autoStackAllRange", 10f,
+                "Defines the range to search chests for the \"Stack All\" action.");
+            autoStackAllIgnorePrivateAreaCheckEntry = Bind(config, Section, "autoStackAllIgnorePrivateAreaCheck", false,
+                "This option prevents to \"Stack All\" into chests from warded areas if the player doesnt have access to it.");
+            autoStackAllIgnoreEquipmentEntry = Bind(config, Section, "autoStackAllIgnoreEquipment", false,
+                "Set to true to prevent equipable items to be stored automatically.");
+            ignoreAmmoEntry = Bind(config, Section, "ignoreAmmo", false,
+                "Set to true to prevent arrows and bolts to be stored automatically.");
+            ignoreFoodEntry = Bind(config, Section, "ignoreFood", false,
+                "Set to true to prevent food items to be stored automatically.");
+            ignoreMeadEntry = Bind(config, Section, "ignoreMead", false,
+                "Set to true to prevent mead to be stored automatically.");
+        }
     }
 }

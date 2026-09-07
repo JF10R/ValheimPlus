@@ -1,8 +1,25 @@
+﻿using BepInEx.Configuration;
+
 namespace ValheimPlus.Configurations.Sections
 {
-    public class LootDropConfiguration : ServerSyncConfig<LootDropConfiguration>
+    public class LootDropConfiguration : BaseConfig
     {
-        public float lootDropAmountMultiplier { get; internal set; } = 0;
-        public float lootDropChanceMultiplier { get; internal set; } = 0;
+        private const string Section = "LootDrop";
+
+        private ConfigEntry<float> lootDropAmountMultiplierEntry;
+        private ConfigEntry<float> lootDropChanceMultiplierEntry;
+
+        public float lootDropAmountMultiplier => lootDropAmountMultiplierEntry.Value;
+        public float lootDropChanceMultiplier => lootDropChanceMultiplierEntry.Value;
+
+        public override void Bind(ConfigFile config)
+        {
+            BindEnabled(config, Section, false,
+                "Change false to true to enable this section, if you set this to false the mode will not be accesible");
+            lootDropAmountMultiplierEntry = Bind(config, Section, "lootDropAmountMultiplier", 0f,
+                "Change the amount of loot dropped when creatures or monsters are slain.\nA value of -100 will eliminate all drops, 0 will have no effect, 100 will double drops, 200 will triple and so on.");
+            lootDropChanceMultiplierEntry = Bind(config, Section, "lootDropChanceMultiplier", 0f,
+                "Change the chance of loot dropping when creatures or monsters are slain.\nA value of -100 will eliminate all drops, 0 will have no effect, 100 will double the percent of getting a drop, 200 will triple and so on.\nExample: If a drop has a 40% chance, setting this to 200 will make that chance 80%,\nand setting it to 300 will make it 100% (120% technically, but anything above 100% acts as 100%)");
+        }
     }
 }

@@ -1,14 +1,41 @@
-﻿namespace ValheimPlus.Configurations.Sections
+﻿using BepInEx.Configuration;
+
+namespace ValheimPlus.Configurations.Sections
 {
-    public class GameClockConfiguration : ServerSyncConfig<GameClockConfiguration>
+    public class GameClockConfiguration : BaseConfig
     {
-        public bool useAMPM { get; set; } = false;
+        private const string Section = "GameClock";
 
-        public int textFontSize { get; set; } = 34;
+        private ConfigEntry<bool> useAMPMEntry;
+        private ConfigEntry<int> textFontSizeEntry;
+        private ConfigEntry<int> textRedChannelEntry;
+        private ConfigEntry<int> textGreenChannelEntry;
+        private ConfigEntry<int> textBlueChannelEntry;
+        private ConfigEntry<int> textTransparencyChannelEntry;
 
-        public int textRedChannel { get; set; } = 248;
-        public int textGreenChannel { get; set; } = 105;
-        public int textBlueChannel { get; set; } = 0;
-        public int textTransparencyChannel { get; set; } = 255;
+        public bool useAMPM => useAMPMEntry.Value;
+        public int textFontSize => textFontSizeEntry.Value;
+        public int textRedChannel => textRedChannelEntry.Value;
+        public int textGreenChannel => textGreenChannelEntry.Value;
+        public int textBlueChannel => textBlueChannelEntry.Value;
+        public int textTransparencyChannel => textTransparencyChannelEntry.Value;
+
+        public override void Bind(ConfigFile config)
+        {
+            BindEnabled(config, Section, false,
+                "Change false to true to enable this section.");
+            useAMPMEntry = Bind(config, Section, "useAMPM", false,
+                "Change time formatting from 24hr to AM-PM.");
+            textFontSizeEntry = Bind(config, Section, "textFontSize", 34,
+                "Change font size of time text.");
+            textRedChannelEntry = Bind(config, Section, "textRedChannel", 248,
+                "Change how red the time text is (51/255).");
+            textGreenChannelEntry = Bind(config, Section, "textGreenChannel", 105,
+                "Change how green the time text is (51/255).");
+            textBlueChannelEntry = Bind(config, Section, "textBlueChannel", 0,
+                "Change how blue the time text is (51/255).");
+            textTransparencyChannelEntry = Bind(config, Section, "textTransparencyChannel", 255,
+                "Change how transparent the time text is (255 is solid with no transparency).");
+        }
     }
 }
