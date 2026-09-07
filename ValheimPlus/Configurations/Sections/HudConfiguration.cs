@@ -2,7 +2,7 @@
 
 namespace ValheimPlus.Configurations.Sections
 {
-    public class HudConfiguration : BaseConfig
+    public class HudConfiguration : ClientConfig
     {
         private const string Section = "Hud";
 

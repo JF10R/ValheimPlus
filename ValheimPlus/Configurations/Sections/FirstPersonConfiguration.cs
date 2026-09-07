@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ValheimPlus.Configurations.Sections
 {
-    public class FirstPersonConfiguration : BaseConfig
+    public class FirstPersonConfiguration : ClientConfig
     {
         private const string Section = "FirstPerson";
 

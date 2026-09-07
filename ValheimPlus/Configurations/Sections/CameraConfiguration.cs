@@ -22,7 +22,7 @@ namespace ValheimPlus.Configurations.Sections
                 "The maximum zoom distance to your character in-game.\nDefault is 6");
             cameraBoatMaximumZoomDistanceEntry = Bind(config, Section, "cameraBoatMaximumZoomDistance", 6f,
                 "The maximum zoom distance to your character when in a boat.\nDefault is 6");
-            cameraFOVEntry = Bind(config, Section, "cameraFOV", 65f,
+            cameraFOVEntry = BindLocal(config, Section, "cameraFOV", 65f,
                 "The in-game camera FOV.\nDefault is 65");
         }
     }

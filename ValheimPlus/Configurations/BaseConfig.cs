@@ -28,25 +28,41 @@ namespace ValheimPlus.Configurations
         /// <summary>Declares this section's config entries, <see cref="BindEnabled"/> first.</summary>
         public abstract void Bind(ConfigFile config);
 
+        /// <summary>True for a section a server neither pushes to clients nor takes from one.</summary>
+        protected virtual bool ClientSide => false;
+
         /// <summary>Binds the section's "enabled" key, which backs <see cref="IsEnabled"/>.</summary>
         protected void BindEnabled(ConfigFile config, string section, bool defaultValue, string description)
         {
             sectionName = section;
             enabledEntry = config.Bind(section, "enabled", defaultValue,
                 new ConfigDescription(description, null, enabledAttributes));
-            syncRegistrations.Add(() => ConfigSyncGlue.Register(enabledEntry, true));
+            if (!ClientSide) syncRegistrations.Add(() => ConfigSyncGlue.Register(enabledEntry, true));
         }
 
-        /// <summary>Binds a setting. A server pushes it to its clients unless it is a keybind.</summary>
+        /// <summary>Binds a setting a server pushes to its clients, unless it is a keybind.</summary>
         protected ConfigEntry<T> Bind<T>(
             ConfigFile config, string section, string key, T defaultValue, string description)
+        {
+            return Bind(config, section, key, defaultValue, description, local: false);
+        }
+
+        /// <summary>Binds a setting that stays on the machine it is set on.</summary>
+        protected ConfigEntry<T> BindLocal<T>(
+            ConfigFile config, string section, string key, T defaultValue, string description)
+        {
+            return Bind(config, section, key, defaultValue, description, local: true);
+        }
+
+        private ConfigEntry<T> Bind<T>(ConfigFile config, string section, string key, T defaultValue,
+            string description, bool local)
         {
             sectionName = section;
             var entry = config.Bind(section, key, defaultValue,
                 new ConfigDescription(description, null, attributes));
 
-            // Keybinds stay personal, so they are neither sent to nor taken from a server.
-            if (typeof(T) != typeof(KeyCode))
+            // Keybinds, and anything else personal, never cross the network.
+            if (!local && !ClientSide && typeof(T) != typeof(KeyCode))
             {
                 syncRegistrations.Add(() => ConfigSyncGlue.Register(entry, true));
             }
@@ -72,5 +88,11 @@ namespace ValheimPlus.Configurations
             attributes.Category = editable ? null : $"{sectionName} ({lockNote})";
             enabledAttributes.Category = attributes.Category;
         }
+    }
+
+    /// <summary>A section that stays local: a server neither pushes nor receives it.</summary>
+    public abstract class ClientConfig : BaseConfig
+    {
+        protected override bool ClientSide => true;
     }
 }
