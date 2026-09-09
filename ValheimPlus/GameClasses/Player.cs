@@ -907,9 +907,17 @@ namespace ValheimPlus.GameClasses
         private static readonly MethodInfo Method_ComputeItemQuantity =
             AccessTools.Method(typeof(Player_HaveRequirementItems_Transpiler), nameof(ComputeItemQuantity));
 
+        private static readonly FieldInfo Field_Requirement_m_resItem =
+            AccessTools.Field(typeof(Piece.Requirement), nameof(Piece.Requirement.m_resItem));
+
         /// <summary>
         /// Patches out the code that checks if there is enough material to craft a specific object.
         /// The return value of this function is used to set the item as "Craftable" or not in the crafts list.
+        ///
+        /// Replaces
+        /// `int num3 = this.m_inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name, quality);`
+        /// with
+        /// `int num3 = ComputeItemQuantity(this.m_inventory.CountItems(...), resource, quality, this);`
         /// </summary>
         [HarmonyTranspiler]
         [UsedImplicitly]
@@ -917,28 +925,44 @@ namespace ValheimPlus.GameClasses
         {
             if (!Configuration.Current.CraftFromChest.IsEnabled) return instructions;
 
-            List<CodeInstruction> il = instructions.ToList();
-
-            for (int i = 0; i < il.Count; ++i)
+            try
             {
-                // replace 
-                // `int num3 = this.m_inventory.CountItems(item.m_resItem.m_itemData.m_shared.m_name, quality);`
-                // with
-                // ```
-                // int num3 = ComputeItemQuantity(
-                //     this.m_inventory.CountItems(item.m_resItem.m_itemData.m_shared.m_name, quality),
-                //     item, quality, this);
-                // ```
-                if (il[i].Calls(Method_Inventory_CountItems))
-                {
-                    il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_2));
-                    il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_S, 5));
-                    il.Insert(++i, new CodeInstruction(OpCodes.Ldarg_0));
-                    il.Insert(++i, new CodeInstruction(OpCodes.Call, Method_ComputeItemQuantity));
-                }
-            }
+                var matcher = new CodeMatcher(instructions)
+                    .MatchStartForward(
+                        new CodeMatch(OpCodes.Ldarg_0),
+                        new CodeMatch(OpCodes.Ldfld), // m_inventory
+                        new CodeMatch(), // resource
+                        new CodeMatch(i => i.LoadsField(Field_Requirement_m_resItem)),
+                        new CodeMatch(OpCodes.Ldfld), // m_itemData
+                        new CodeMatch(OpCodes.Ldfld), // m_shared
+                        new CodeMatch(OpCodes.Ldfld), // m_name
+                        new CodeMatch(), // quality
+                        new CodeMatch(), // matchWorldLevel
+                        new CodeMatch(i => i.Calls(Method_Inventory_CountItems)))
+                    .ThrowIfNotMatch("No match for this.m_inventory.CountItems(resource name, quality).");
 
-            return il;
+                // Copy the resource and quality loads off the call site. Their local slots are not
+                // stable: the game hoists new locals into this method and shifts every slot.
+                var resource = matcher.InstructionAt(2);
+                var quality = matcher.InstructionAt(7);
+
+                return matcher
+                    .Advance(10)
+                    .Insert(
+                        new CodeInstruction(resource.opcode, resource.operand),
+                        new CodeInstruction(quality.opcode, quality.operand),
+                        new CodeInstruction(OpCodes.Ldarg_0),
+                        new CodeInstruction(OpCodes.Call, Method_ComputeItemQuantity))
+                    .InstructionEnumeration();
+            }
+            catch (Exception e)
+            {
+                PatchLog.Failed(
+                    nameof(Player_HaveRequirementItems_Transpiler),
+                    "Crafting will not count items in nearby chests.",
+                    e);
+                return instructions;
+            }
         }
 
         private static int ComputeItemQuantity(int fromInventory, Piece.Requirement item, int quality, Player player)
@@ -1035,9 +1059,18 @@ namespace ValheimPlus.GameClasses
             AccessTools.Method(typeof(Player_ConsumeResources_Transpiler),
                 nameof(RemoveItemsFromInventoryAndNearbyChests));
 
+        private static readonly FieldInfo Field_Requirement_m_resItem =
+            AccessTools.Field(typeof(Piece.Requirement), nameof(Piece.Requirement.m_resItem));
+
         /// <summary>
         /// Patches out the code that consumes the material required to craft something.
         /// We first remove the amount we can from the player inventory before moving on to the nearby chests.
+        ///
+        /// Replaces
+        /// `this.m_inventory.RemoveItem(requirement.m_resItem.m_itemData.m_shared.m_name, amount, itemQuality);`
+        /// with
+        /// `RemoveItemsFromInventoryAndNearbyChests(this, requirement, amount, itemQuality)`,
+        /// reusing the leading `this` as the first argument.
         /// </summary>
         [HarmonyTranspiler]
         [UsedImplicitly]
@@ -1045,49 +1078,47 @@ namespace ValheimPlus.GameClasses
         {
             if (!Configuration.Current.CraftFromChest.IsEnabled) return instructions;
 
-            var il = instructions.ToList();
-
-            int thisIdx = -1;
-            int callIdx = -1;
-
-            for (int i = 0; i < il.Count; ++i)
+            try
             {
-                if (il[i].opcode == OpCodes.Ldarg_0)
-                {
-                    thisIdx = i;
-                }
-                else if (il[i].Calls(Method_Inventory_RemoveItem))
-                {
-                    callIdx = i;
-                    break;
-                }
-            }
+                var matcher = new CodeMatcher(instructions)
+                    .MatchStartForward(
+                        new CodeMatch(OpCodes.Ldarg_0),
+                        new CodeMatch(OpCodes.Ldfld), // m_inventory
+                        new CodeMatch(), // requirement
+                        new CodeMatch(i => i.LoadsField(Field_Requirement_m_resItem)),
+                        new CodeMatch(OpCodes.Ldfld), // m_itemData
+                        new CodeMatch(OpCodes.Ldfld), // m_shared
+                        new CodeMatch(OpCodes.Ldfld), // m_name
+                        new CodeMatch(), // amount
+                        new CodeMatch(), // itemQuality
+                        new CodeMatch(), // worldLevelBased
+                        new CodeMatch(i => i.Calls(Method_Inventory_RemoveItem)))
+                    .ThrowIfNotMatch("No match for this.m_inventory.RemoveItem(resource name, amount, quality).");
 
-            if (thisIdx == -1 || callIdx == -1)
+                // Copy the argument loads off the call site. Their local slots are not stable: the
+                // game hoists new locals into this method and shifts every slot.
+                var requirement = matcher.InstructionAt(2);
+                var amount = matcher.InstructionAt(7);
+                var quality = matcher.InstructionAt(8);
+
+                return matcher
+                    .Advance(1)
+                    .RemoveInstructions(10)
+                    .Insert(
+                        new CodeInstruction(requirement.opcode, requirement.operand),
+                        new CodeInstruction(amount.opcode, amount.operand),
+                        new CodeInstruction(quality.opcode, quality.operand),
+                        new CodeInstruction(OpCodes.Call, Method_RemoveItemsFromInventoryAndNearbyChests))
+                    .InstructionEnumeration();
+            }
+            catch (Exception e)
             {
                 PatchLog.Failed(
                     nameof(Player_ConsumeResources_Transpiler),
-                    "Crafting will not take resources from nearby chests.");
+                    "Crafting will not take resources from nearby chests.",
+                    e);
+                return instructions;
             }
-            else
-            {
-                // Replaces 
-                // ```
-                // this.m_inventory.RemoveItem(requirement.m_resItem.m_itemData.m_shared.m_name, amount, itemQuality);
-                // ```
-                // with
-                // ```
-                // RemoveItemsFromInventoryAndNearbyChests(this, requirement, amount, itemQuality)
-                // ```
-                il.RemoveRange(thisIdx + 1, callIdx - thisIdx);
-
-                il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_2));
-                il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_3));
-                il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldarg_3));
-                il.Insert(++thisIdx, new CodeInstruction(OpCodes.Call, Method_RemoveItemsFromInventoryAndNearbyChests));
-            }
-
-            return il;
         }
 
         private static void RemoveItemsFromInventoryAndNearbyChests(
@@ -1253,6 +1284,9 @@ namespace ValheimPlus.GameClasses
     [HarmonyPatch(typeof(Player), nameof(Player.GetFirstRequiredItem))]
     public static class Player_GetFirstRequiredItem_Transpiler
     {
+        private static readonly FieldInfo Field_Humanoid_m_inventory =
+            AccessTools.Field(typeof(Humanoid), nameof(Humanoid.m_inventory));
+
         /// <summary>
         /// Patches out the function Player::GetFirstRequiredItem
         /// As the original code is calling Inventory::CountItems using `this` instead of using the inventory parameter
@@ -1265,19 +1299,27 @@ namespace ValheimPlus.GameClasses
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpile(IEnumerable<CodeInstruction> instructions)
         {
-            List<CodeInstruction> il = instructions.ToList();
-
-            for (int i = 0; i < il.Count; i++)
+            try
             {
-                if (il[i].opcode == OpCodes.Ldarg_0)
-                {
-                    il[i].opcode = OpCodes.Ldarg_1;
-                    il.RemoveAt(i + 1);
-
-                    return il.AsEnumerable();
-                }
+                // Match the field load too. A bare "first Ldarg_0" would hit the
+                // `this.GetCurrentCraftingStation()` the game now opens this method with.
+                return new CodeMatcher(instructions)
+                    .MatchStartForward(
+                        new CodeMatch(OpCodes.Ldarg_0),
+                        new CodeMatch(i => i.LoadsField(Field_Humanoid_m_inventory)))
+                    .ThrowIfNotMatch("No match for this.m_inventory.")
+                    .SetOpcodeAndAdvance(OpCodes.Ldarg_1)
+                    .RemoveInstruction()
+                    .InstructionEnumeration();
             }
-            return instructions;
+            catch (Exception e)
+            {
+                PatchLog.Failed(
+                    nameof(Player_GetFirstRequiredItem_Transpiler),
+                    "Crafting will not find required items in nearby chests.",
+                    e);
+                return instructions;
+            }
         }
     }
 
