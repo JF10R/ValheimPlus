@@ -48,6 +48,19 @@ namespace ValheimPlus.GameClasses
         /// </summary>
         static void Postfix(Container __instance, ref Inventory ___m_inventory)
         {
+            ApplyConfiguredSize(__instance, ref ___m_inventory);
+
+            if (!Configuration.Current.Inventory.IsEnabled) return;
+            if (__instance == null || ___m_inventory == null) return;
+
+            // Container.UpdateRows recomputes inventory height from Container.m_height on every
+            // load, so the Container's own dimensions have to agree with ours.
+            __instance.m_width = ___m_inventory.m_width;
+            __instance.m_height = ___m_inventory.m_height;
+        }
+
+        static void ApplyConfiguredSize(Container __instance, ref Inventory ___m_inventory)
+        {
 
             if (!Configuration.Current.Inventory.IsEnabled) return;
 
