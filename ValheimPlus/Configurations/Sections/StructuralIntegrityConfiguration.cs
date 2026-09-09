@@ -13,6 +13,8 @@ namespace ValheimPlus.Configurations.Sections
         private ConfigEntry<float> marbleEntry;
         private ConfigEntry<float> ashstoneEntry;
         private ConfigEntry<float> ancientEntry;
+        private ConfigEntry<float> iceEntry;
+        private ConfigEntry<float> timberwoodEntry;
         private ConfigEntry<bool> disableStructuralIntegrityEntry;
         private ConfigEntry<bool> disableDamageToPlayerStructuresEntry;
         private ConfigEntry<bool> disableDamageToPlayerBoatsEntry;
@@ -27,6 +29,8 @@ namespace ValheimPlus.Configurations.Sections
         public float marble => marbleEntry.Value;
         public float ashstone => ashstoneEntry.Value;
         public float ancient => ancientEntry.Value;
+        public float ice => iceEntry.Value;
+        public float timberwood => timberwoodEntry.Value;
         public bool disableStructuralIntegrity => disableStructuralIntegrityEntry.Value;
         public bool disableDamageToPlayerStructures => disableDamageToPlayerStructuresEntry.Value;
         public bool disableDamageToPlayerBoats => disableDamageToPlayerBoatsEntry.Value;
@@ -51,6 +55,10 @@ namespace ValheimPlus.Configurations.Sections
             ashstoneEntry = Bind(config, Section, "ashstone", 0f,
                 "Each of these values reduce the loss of structural integrity by distance by % less.\nThe value 100 would result in disabled structural integrity over distance, does not allow for placement in free air without disableStructuralIntegrity.");
             ancientEntry = Bind(config, Section, "ancient", 0f,
+                "Each of these values reduce the loss of structural integrity by distance by % less.\nThe value 100 would result in disabled structural integrity over distance, does not allow for placement in free air without disableStructuralIntegrity.");
+            iceEntry = Bind(config, Section, "ice", 0f,
+                "Each of these values reduce the loss of structural integrity by distance by % less.\nThe value 100 would result in disabled structural integrity over distance, does not allow for placement in free air without disableStructuralIntegrity.");
+            timberwoodEntry = Bind(config, Section, "timberwood", 0f,
                 "Each of these values reduce the loss of structural integrity by distance by % less.\nThe value 100 would result in disabled structural integrity over distance, does not allow for placement in free air without disableStructuralIntegrity.");
             disableStructuralIntegrityEntry = Bind(config, Section, "disableStructuralIntegrity", false,
                 "Disables the entire structural integrity system and allows for placement in free air, does not prevent building damage.");

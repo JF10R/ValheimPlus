@@ -96,6 +96,8 @@ namespace ValheimPlus.GameClasses
             [WearNTear.MaterialType.Marble] = () => Configuration.Current.StructuralIntegrity.marble,
             [WearNTear.MaterialType.Ashstone] = () => Configuration.Current.StructuralIntegrity.ashstone,
             [WearNTear.MaterialType.Ancient] = () => Configuration.Current.StructuralIntegrity.ancient,
+            [WearNTear.MaterialType.Ice] = () => Configuration.Current.StructuralIntegrity.ice,
+            [WearNTear.MaterialType.Timberwood] = () => Configuration.Current.StructuralIntegrity.timberwood,
         };
 
         [UsedImplicitly]
