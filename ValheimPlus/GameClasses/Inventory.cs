@@ -46,29 +46,36 @@ namespace ValheimPlus.GameClasses
     }
 
     /// <summary>
-    /// Configure player inventory size
+    /// Configure player inventory size as a minimum, since the game owns rows itself.
     /// </summary>
-    [HarmonyPatch(typeof(Inventory), MethodType.Constructor, typeof(string), typeof(Sprite), typeof(int), typeof(int))]
-    public static class Inventory_Constructor_Patch
+    [HarmonyPatch(typeof(Player), nameof(Player.SetInventorySize))]
+    public static class Player_SetInventorySize_Patch
     {
-        private const int PlayerInventoryMaxRows = 20;
-        private const int PlayerInventoryMinRows = 4;
-
         [UsedImplicitly]
-        public static void Prefix(string name, ref int w, ref int h)
+        public static void Prefix(ref int rows)
         {
             if (!Configuration.Current.Inventory.IsEnabled) return;
 
-            // Player inventory
-            if (name is "Grave" or "Inventory" or "$piece_tombstone_container")
-            {
-                h = Helper.Clamp(value: Configuration.Current.Inventory.playerInventoryRows,
-                    min: PlayerInventoryMinRows,
-                    max: PlayerInventoryMaxRows);
-            }
+            rows = Math.Max(rows, Configuration.Current.Inventory.playerInventoryRows);
         }
     }
 
+    /// <summary>
+    /// Size a fresh character, which has no saved rows for the game to size from.
+    /// </summary>
+    [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
+    public static class Player_OnSpawned_InventorySize_Patch
+    {
+        [UsedImplicitly]
+        public static void Postfix(Player __instance)
+        {
+            if (!Configuration.Current.Inventory.IsEnabled) return;
+            if (__instance == null || __instance != Player.m_localPlayer) return;
+
+            int rows = Configuration.Current.Inventory.playerInventoryRows;
+            if (__instance.GetInventory().GetHeight() < rows) __instance.SetInventorySize(rows);
+        }
+    }
 
     public static class Inventory_NearbyChests_Cache
     {

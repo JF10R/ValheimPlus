@@ -1,4 +1,5 @@
-﻿using BepInEx.Configuration;
+﻿using System;
+using BepInEx.Configuration;
 
 namespace ValheimPlus.Configurations.Sections
 {
@@ -26,7 +27,7 @@ namespace ValheimPlus.Configurations.Sections
 
         public bool inventoryFillTopToBottom => inventoryFillTopToBottomEntry.Value;
         public bool mergeWithExistingStacks => mergeWithExistingStacksEntry.Value;
-        public int playerInventoryRows => playerInventoryRowsEntry.Value;
+        public int playerInventoryRows => Math.Min(9, Math.Max(4, playerInventoryRowsEntry.Value));
         public int woodChestColumns => woodChestColumnsEntry.Value;
         public int woodChestRows => woodChestRowsEntry.Value;
         public int personalChestColumns => personalChestColumnsEntry.Value;
@@ -51,7 +52,7 @@ namespace ValheimPlus.Configurations.Sections
             mergeWithExistingStacksEntry = Bind(config, Section, "mergeWithExistingStacks", false,
                 "By default items go to their original position when picking up your tombstone.\nSet to true to make all stacks try to merge with an existing stack first.");
             playerInventoryRowsEntry = Bind(config, Section, "playerInventoryRows", 4,
-                "Player inventory number of rows (inventory is resized up to 6 rows, higher values will add a scrollbar). default 4, min 4, max 20");
+                "Player inventory number of rows. Acts as a minimum: rows gained in-game are kept.\n(default 4, min 4, max 9)");
             woodChestColumnsEntry = Bind(config, Section, "woodChestColumns", 5,
                 "Wood chest number of columns\n(default 5, 3 min, 8 max)");
             woodChestRowsEntry = Bind(config, Section, "woodChestRows", 2,
