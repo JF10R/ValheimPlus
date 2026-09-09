@@ -98,7 +98,7 @@ namespace ValheimPlus.GameClasses
             return il.AsEnumerable();
         }
 
-        private static GameObject[] CreateNoop(Vector3 _0, Quaternion _1, Transform _2, float _3, int _4)
+        private static GameObject[] CreateNoop(EffectList _0, Vector3 _1, Quaternion _2, Transform _3, float _4, int _5, ZDOID _6)
         {
             return null;
         }

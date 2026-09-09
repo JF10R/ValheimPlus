@@ -681,7 +681,7 @@ namespace ValheimPlus.GameClasses
                 return il.AsEnumerable();
             }
 
-            public static void MessageNoop(Character _0, MessageHud.MessageType _1, string _2, int _3, Sprite _4, int repaired)
+            public static void MessageNoop(Character _0, MessageHud.MessageType _1, string _2, int _3, Sprite _4, bool _5, int repaired)
             {
                 m_repair_count += repaired;
             }
