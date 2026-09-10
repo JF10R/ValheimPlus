@@ -2,14 +2,14 @@
 # run from the ValheimPlus repo root dir
 
 # Update this as necessary:
-BEPINEXPACK_VALHEIM_VERSION="5.4.2333"
+BEPINEXPACK_VALHEIM_VERSION="5.4.2350"
 
 # Constants:
 NUMERIC_VERSION=$(grep "public const string NumericVersion" ValheimPlus/ValheimPlus.cs | cut -f2 -d'"')
 VERSION_EXTRA=$(grep "private const string VersionExtra" ValheimPlus/ValheimPlus.cs | cut -f2 -d'"')
 VERSION="${NUMERIC_VERSION}${VERSION_EXTRA}"
 OUTPUT_DIR=$(realpath "release/$VERSION")
-TEMP_DIR="release/temp"
+TEMP_DIR=$(realpath "release/temp")
 VALHEIM_PLUS_DLL="ValheimPlus\bin\Debug\ValheimPlus.dll"
 BEPINEXPACK_VALHEIM_TEMP_DIR="$TEMP_DIR/denikson-BepInExPack_Valheim"
 BEPINEXPACK_VALHEIM_DOWNLOAD_URL="https://gcdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-$BEPINEXPACK_VALHEIM_VERSION.zip"
@@ -55,6 +55,7 @@ if [ $? -ne 0 ]; then
 fi
 
 unzip -q "$BEPINEXPACK_VALHEIM_ZIP_FILE" -d "$BEPINEXPACK_VALHEIM_TEMP_DIR"
+mkdir -p "$PLUGINS_DIR"
 cp "$VALHEIM_PLUS_DLL" "$VALHEIM_PLUS_DLL_DESTINATION"
 
 # trim down files to just those needed for Unix.
