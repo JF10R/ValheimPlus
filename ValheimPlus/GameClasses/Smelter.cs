@@ -269,6 +269,12 @@ namespace ValheimPlus.GameClasses
                         }
 
                         ItemDrop.ItemData oreItem = itemConversion.m_from.m_itemData;
+
+                        // Read the flag off the chest's own item before we take it, so cheated ore
+                        // stays cheated once it is in the smelter.
+                        bool oreCheated = c.GetInventory().GetAllItems()
+                            .Any(i => i.m_shared.m_name == oreItem.m_shared.m_name && i.m_cheated);
+
                         int addedOres = InventoryAssistant.RemoveItemFromChest(c, oreItem, toMaxOre);
                         if (addedOres > 0)
                         {
@@ -276,7 +282,7 @@ namespace ValheimPlus.GameClasses
 
                             for (int i = 0; i < addedOres; i++)
                             {
-                                smelter.m_nview.InvokeRPC("RPC_AddOre", new object[] { orePrefab.name });
+                                smelter.m_nview.InvokeRPC("RPC_AddOre", new object[] { orePrefab.name, oreCheated });
                             }
                             toMaxOre -= addedOres;
                             if (addedOres > 0)

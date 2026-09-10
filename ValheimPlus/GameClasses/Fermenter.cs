@@ -184,7 +184,9 @@ namespace ValheimPlus.GameClasses
                     {
                         if (InventoryAssistant.RemoveItemFromChest(c, item) == 0) continue;
 
-                        __instance.m_nview.InvokeRPC("RPC_AddItem", new object[] { item.m_dropPrefab.name });
+                        // RPC_AddItem takes the name's hash, not the name.
+                        __instance.m_nview.InvokeRPC("RPC_AddItem",
+                            new object[] { item.m_dropPrefab.name.GetStableHashCode(), item.m_cheated });
                         ValheimPlusPlugin.Logger.LogDebug("Added " + item.m_shared.m_name + " to " + __instance.m_name);
                         break;
                     }
