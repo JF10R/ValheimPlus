@@ -23,7 +23,8 @@ namespace ValheimPlus
                     m_amountMax = (int)Helper.applyModifierValue(originalDrop.m_amountMax, Configuration.Current.LootDrop.lootDropAmountMultiplier),
                     m_chance = Helper.applyModifierValue(originalDrop.m_chance, Configuration.Current.LootDrop.lootDropChanceMultiplier),
                     m_onePerPlayer = originalDrop.m_onePerPlayer,
-                    m_levelMultiplier = originalDrop.m_levelMultiplier
+                    m_levelMultiplier = originalDrop.m_levelMultiplier,
+                    m_dontScale = originalDrop.m_dontScale
                 }
                 );
             }
