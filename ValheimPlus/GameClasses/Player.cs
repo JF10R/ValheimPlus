@@ -931,6 +931,8 @@ namespace ValheimPlus.GameClasses
                 // ```
                 if (il[i].Calls(Method_Inventory_CountItems))
                 {
+                    // Valheim 1.0.7: V_3 is the current Piece.Requirement;
+                    // V_6 is the quality iteration passed to Inventory.CountItems.
                     il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_3));
                     il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_S, 6));
                     il.Insert(++i, new CodeInstruction(OpCodes.Ldarg_0));
@@ -1081,6 +1083,8 @@ namespace ValheimPlus.GameClasses
                 // ```
                 il.RemoveRange(thisIdx + 1, callIdx - thisIdx);
 
+                // Valheim 1.0.7: V_3 is the current Requirement;
+                // V_4 is the computed amount to consume.
                 il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_3));
                 il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_S, 4));
                 il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldarg_3));
