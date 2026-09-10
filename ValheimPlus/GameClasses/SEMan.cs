@@ -5,10 +5,11 @@ using ValheimPlus.Configurations;
 namespace ValheimPlus.GameClasses
 {
     // Modify length of in multiplayer and singleplayer casted guradian powers including around the player.
-    [HarmonyPatch(typeof(SEMan), nameof(SEMan.AddStatusEffect), new Type[] { typeof(StatusEffect), typeof(bool), typeof(int), typeof(float) })]
+    [HarmonyPatch(typeof(SEMan), nameof(SEMan.AddStatusEffect), new Type[] { typeof(int), typeof(bool), typeof(int), typeof(float), typeof(short) })]
     public static class SEMan_AddStatusEffect_Patch
     {
-        private static void Postfix(ref SEMan __instance, ref StatusEffect statusEffect, bool resetTime = false, int itemLevel = 0, float skillLevel = 0)
+        /// <summary>Applies the configured Guardian Power duration to the affected player.</summary>
+        private static void Postfix(ref SEMan __instance, int nameHash, bool resetTime = false, int itemLevel = 0, float skillLevel = 0, short variant = -1)
         {
 
             if (!Configuration.Current.Player.IsEnabled)
@@ -19,6 +20,10 @@ namespace ValheimPlus.GameClasses
                 return;
 
             // Every guardian power starts with GP_
+            StatusEffect statusEffect = __instance.GetStatusEffect(nameHash);
+            if (statusEffect == null)
+                return;
+
             if (statusEffect.name.StartsWith("GP_"))
             {
                 foreach (StatusEffect buff in __instance.m_statusEffects)

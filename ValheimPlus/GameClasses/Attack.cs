@@ -44,15 +44,16 @@ namespace ValheimPlus.GameClasses
         }
     }
 
-    [HarmonyPatch(typeof(Attack), nameof(Attack.GetAttackEitr))]
+    [HarmonyPatch(typeof(Attack), nameof(Attack.GetAttackEitr), new System.Type[] { typeof(Character), typeof(ItemDrop.ItemData) })]
     public static class Attack_GetAttackEitr_Patch
     {
+        /// <summary>Modifies Eitr cost once at the shared overload used by direct and parameterless calls.</summary>
         [UsedImplicitly]
-        private static void Postfix(ref Attack __instance, ref float __result)
+        private static void Postfix(Character __0, ItemDrop.ItemData __1, ref float __result)
         {
-            if (!Configuration.Current.EitrUsage.IsEnabled || !__instance.IsAttackFromLocalPlayer()) return;
+            if (!Configuration.Current.EitrUsage.IsEnabled || __0 == null || __0 != Player.m_localPlayer) return;
 
-            var modifier = __instance.GetCharacterWeaponSkillType() switch
+            var modifier = __1.m_shared.m_skillType switch
             {
                 Skills.SkillType.BloodMagic => Configuration.Current.EitrUsage.bloodMagic,
                 Skills.SkillType.ElementalMagic => Configuration.Current.EitrUsage.elementalMagic,

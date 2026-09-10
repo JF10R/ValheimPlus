@@ -681,7 +681,7 @@ namespace ValheimPlus.GameClasses
                 return il.AsEnumerable();
             }
 
-            public static void MessageNoop(Character _0, MessageHud.MessageType _1, string _2, int _3, Sprite _4, int repaired)
+            public static void MessageNoop(Character _0, MessageHud.MessageType _1, string _2, int _3, Sprite _4, bool _5, int repaired)
             {
                 m_repair_count += repaired;
             }
@@ -931,8 +931,8 @@ namespace ValheimPlus.GameClasses
                 // ```
                 if (il[i].Calls(Method_Inventory_CountItems))
                 {
-                    il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_2));
-                    il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_S, 5));
+                    il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_3));
+                    il.Insert(++i, new CodeInstruction(OpCodes.Ldloc_S, 6));
                     il.Insert(++i, new CodeInstruction(OpCodes.Ldarg_0));
                     il.Insert(++i, new CodeInstruction(OpCodes.Call, Method_ComputeItemQuantity));
                 }
@@ -1081,8 +1081,8 @@ namespace ValheimPlus.GameClasses
                 // ```
                 il.RemoveRange(thisIdx + 1, callIdx - thisIdx);
 
-                il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_2));
                 il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_3));
+                il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldloc_S, 4));
                 il.Insert(++thisIdx, new CodeInstruction(OpCodes.Ldarg_3));
                 il.Insert(++thisIdx, new CodeInstruction(OpCodes.Call, Method_RemoveItemsFromInventoryAndNearbyChests));
             }

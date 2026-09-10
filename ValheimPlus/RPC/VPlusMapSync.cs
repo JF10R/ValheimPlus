@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -269,6 +270,11 @@ namespace ValheimPlus.RPC
             }
 
             return exploredAreas;
+        }
+
+        private static List<MapRange> ExplorationDataToMapRanges(BitArray explorationData)
+        {
+            return ExplorationDataToMapRanges(explorationData.Cast<bool>().ToArray());
         }
 
         private static List<ZPackage> ChunkMapData(List<MapRange> mapData, int chunkSize = 10000)
