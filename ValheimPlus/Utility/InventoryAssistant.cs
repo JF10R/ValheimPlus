@@ -14,6 +14,10 @@ namespace ValheimPlus
         /// </summary>
         public static List<Container> GetNearbyChests(GameObject target, float range, bool checkWard = true)
         {
+            // Every container is filtered by what the local player may access, so without one there
+            // is nothing to return. Null between worlds and always on a dedicated server.
+            if (!Player.m_localPlayer) return new List<Container>();
+
             // item == cart layermask
             // vehicle == cart&ship layermask
 
