@@ -80,20 +80,27 @@ namespace ValheimPlus.Configurations
             ConfigSyncGlue.Initialize(ValheimPlusPlugin.ValheimPlusGuid, "Valheim Plus",
                 ValheimPlusPlugin.NumericVersion, ValheimPlusPlugin.MinRequiredNumericVersion);
 
-            // Transpilers read config at patch time, so a source swap needs the patches reapplied.
-            ConfigSyncGlue.SourceOfTruthChanged += _ =>
+            // Only the return to our own values. The other direction is handled in ConfigApplied.
+            ConfigSyncGlue.SourceOfTruthChanged += isSourceOfTruth =>
             {
-                ValheimPlusPlugin.Logger.LogDebug("Config source changed, re-applying patches.");
-                ValheimPlusPlugin.UnpatchSelf();
-                ValheimPlusPlugin.PatchAll();
-
-                // That was the change, so a later window close need not repeat the work.
-                ConfigurationManagerWatcher.MarkClean();
+                if (isSourceOfTruth) ReapplyPatches("Config source changed");
             };
+
+            ConfigSyncGlue.ConfigApplied += () => ReapplyPatches("Received config from the server");
 
             // Decides whether non-admins may change synced settings while connected.
             ConfigSyncGlue.RegisterLocking((ConfigEntry<bool>)Config[
                 nameof(Configuration.Server), nameof(ServerConfiguration.serverSyncsConfig)]);
+        }
+
+        private static void ReapplyPatches(string reason)
+        {
+            ValheimPlusPlugin.Logger.LogDebug($"{reason}, re-applying patches.");
+            ValheimPlusPlugin.UnpatchSelf();
+            ValheimPlusPlugin.PatchAll();
+
+            // That was the change, so a later window close need not repeat the work.
+            ConfigurationManagerWatcher.MarkClean();
         }
 
         /// <summary>
