@@ -250,6 +250,13 @@ namespace ValheimPlus.GameClasses
 
                 ItemDrop comp = itemObject.GetComponent<ItemDrop>();
 
+                // Stamp the world level and cheat flag the same way Fermenter.DelayedTap does, so
+                // what we put in the chest is indistinguishable from what it would have dropped.
+                ItemDrop.OnCreateNew(comp,
+                    (__instance.m_delayedTapItemCheated ||
+                     __instance.m_nview.GetZDO().GetBool(ZDOVars.s_cheated)) &&
+                    !PlayerProfile.s_bypassCheatChecks);
+
                 bool result = spawnNearbyChest(comp, true);
                 Object.Destroy(itemObject);
                 if (!result)

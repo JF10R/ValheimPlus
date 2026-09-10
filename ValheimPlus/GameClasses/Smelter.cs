@@ -118,6 +118,13 @@ namespace ValheimPlus.GameClasses
                 ItemDrop comp = spawnedOre.GetComponent<ItemDrop>();
                 comp.m_itemData.m_stack = stack;
 
+                // Stamp the world level and cheat flag the same way Smelter.Spawn does, so what we
+                // put in the chest is indistinguishable from what the smelter would have dropped.
+                ItemDrop.OnCreateNew(comp,
+                    (smelter.m_nview.GetZDO().GetBool(ZDOVars.s_cheatedQueued) ||
+                     smelter.m_nview.GetZDO().GetBool(ZDOVars.s_cheated)) &&
+                    !PlayerProfile.s_bypassCheatChecks);
+
                 bool result = spawnNearbyChest(true);
                 Object.Destroy(spawnedOre);
 
