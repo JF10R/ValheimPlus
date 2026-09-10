@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ValheimPlus.Configurations;
@@ -67,7 +68,12 @@ namespace ValheimPlus
                             validContainers.Add(foundContainer);
                     }
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    // Skip the container rather than abandon the search, but say what went wrong.
+                    ValheimPlusPlugin.Logger.LogDebug(
+                        $"GetNearbyChests skipped '{hitCollider.gameObject.name}': {e}");
+                }
             }
 
             return validContainers;
