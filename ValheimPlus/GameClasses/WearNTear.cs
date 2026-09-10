@@ -44,6 +44,8 @@ namespace ValheimPlus.GameClasses
             AccessTools.Field(typeof(WearNTear), nameof(WearNTear.m_lavaValue));
         private static readonly FieldInfo Field_WearNTearAshDamageResist =
             AccessTools.Field(typeof(WearNTear), nameof(WearNTear.m_ashDamageResist));
+        private static readonly MethodInfo Method_GameInstance =
+            AccessTools.PropertyGetter(typeof(Game), nameof(Game.instance));
         private static readonly MethodInfo Method_AddHeavySnowWear =
             AccessTools.Method(typeof(WearNTear_UpdateWear_Transpiler), nameof(AddHeavySnowWear));
         private static readonly MethodInfo Method_AddAshWear =
@@ -82,9 +84,11 @@ namespace ValheimPlus.GameClasses
                     return FailClosed(original, "Expected exactly one lava contribution in the validated wear accumulator.");
                 }
 
-                if (Method_AddHeavySnowWear == null || Method_AddAshWear == null || Method_AddLavaWear == null)
+                if (Method_GameInstance == null || Field_GameSnowDamage == null || Field_GameAshDamage == null ||
+                    Field_WearNTearLavaValue == null || Field_WearNTearAshDamageResist == null ||
+                    Method_AddHeavySnowWear == null || Method_AddAshWear == null || Method_AddLavaWear == null)
                 {
-                    return FailClosed(original, "Wear contribution helpers could not be resolved.");
+                    return FailClosed(original, "Wear contribution members could not be resolved.");
                 }
 
                 if (!IsAddInstruction(original, snowAnchors[0]) || !IsAddInstruction(original, ashAnchors[0]) ||
@@ -133,13 +137,17 @@ namespace ValheimPlus.GameClasses
         {
             var anchors = new List<ContributionAnchor>();
 
-            for (var i = 0; i + 2 < il.Count; i++)
+            for (var i = 0; i + 4 < il.Count; i++)
             {
-                if (!il[i].LoadsField(contributionField) || il[i + 1].opcode != OpCodes.Add)
+                if (!TryGetLoadedLocalIndex(il[i], out var loadedLocal) ||
+                    !il[i + 1].Calls(Method_GameInstance) ||
+                    !il[i + 2].LoadsField(contributionField) ||
+                    il[i + 3].opcode != OpCodes.Add ||
+                    !TryGetStoredLocalIndex(il[i + 4], out var storedLocal) ||
+                    loadedLocal != storedLocal)
                     continue;
 
-                if (TryGetLocalIndex(il[i + 2], out var accumulatorLocal))
-                    anchors.Add(new ContributionAnchor(i + 1, accumulatorLocal));
+                anchors.Add(new ContributionAnchor(i + 3, storedLocal));
             }
 
             return anchors;
@@ -169,7 +177,7 @@ namespace ValheimPlus.GameClasses
                 if (il[i].opcode == OpCodes.Mul)
                     sawMultiplication = true;
 
-                if (il[i].opcode != OpCodes.Add || !TryGetLocalIndex(il[i + 1], out var storedLocal) ||
+                if (il[i].opcode != OpCodes.Add || !TryGetStoredLocalIndex(il[i + 1], out var storedLocal) ||
                     storedLocal != expectedAccumulatorLocal || !sawLavaValue ||
                     !sawAshDamageResist || !sawMultiplication)
                     continue;
@@ -182,48 +190,87 @@ namespace ValheimPlus.GameClasses
 
         private static bool IsStoreToLocal(CodeInstruction instruction, int expectedLocal)
         {
-            return TryGetLocalIndex(instruction, out var localIndex) && localIndex == expectedLocal &&
-                   (instruction.opcode == OpCodes.Stloc || instruction.opcode == OpCodes.Stloc_S ||
-                    instruction.opcode == OpCodes.Stloc_0 || instruction.opcode == OpCodes.Stloc_1 ||
-                    instruction.opcode == OpCodes.Stloc_2 || instruction.opcode == OpCodes.Stloc_3);
+            return TryGetStoredLocalIndex(instruction, out var localIndex) && localIndex == expectedLocal;
         }
 
-        private static bool TryGetLocalIndex(CodeInstruction instruction, out int localIndex)
+        private static bool TryGetLoadedLocalIndex(CodeInstruction instruction, out int localIndex)
         {
-            if (instruction.opcode == OpCodes.Stloc_0 || instruction.opcode == OpCodes.Ldloc_0)
+            if (instruction.opcode == OpCodes.Ldloc_0)
             {
                 localIndex = 0;
                 return true;
             }
-            if (instruction.opcode == OpCodes.Stloc_1 || instruction.opcode == OpCodes.Ldloc_1)
+            if (instruction.opcode == OpCodes.Ldloc_1)
             {
                 localIndex = 1;
                 return true;
             }
-            if (instruction.opcode == OpCodes.Stloc_2 || instruction.opcode == OpCodes.Ldloc_2)
+            if (instruction.opcode == OpCodes.Ldloc_2)
             {
                 localIndex = 2;
                 return true;
             }
-            if (instruction.opcode == OpCodes.Stloc_3 || instruction.opcode == OpCodes.Ldloc_3)
+            if (instruction.opcode == OpCodes.Ldloc_3)
             {
                 localIndex = 3;
                 return true;
             }
 
-            if (instruction.opcode != OpCodes.Stloc && instruction.opcode != OpCodes.Stloc_S &&
-                instruction.opcode != OpCodes.Ldloc && instruction.opcode != OpCodes.Ldloc_S)
+            if (instruction.opcode != OpCodes.Ldloc && instruction.opcode != OpCodes.Ldloc_S)
             {
                 localIndex = 0;
                 return false;
             }
 
+            return TryGetLocalOperandIndex(instruction, out localIndex);
+        }
+
+        private static bool TryGetStoredLocalIndex(CodeInstruction instruction, out int localIndex)
+        {
+            if (instruction.opcode == OpCodes.Stloc_0)
+            {
+                localIndex = 0;
+                return true;
+            }
+            if (instruction.opcode == OpCodes.Stloc_1)
+            {
+                localIndex = 1;
+                return true;
+            }
+            if (instruction.opcode == OpCodes.Stloc_2)
+            {
+                localIndex = 2;
+                return true;
+            }
+            if (instruction.opcode == OpCodes.Stloc_3)
+            {
+                localIndex = 3;
+                return true;
+            }
+
+            if (instruction.opcode != OpCodes.Stloc && instruction.opcode != OpCodes.Stloc_S)
+            {
+                localIndex = 0;
+                return false;
+            }
+
+            return TryGetLocalOperandIndex(instruction, out localIndex);
+        }
+
+        private static bool TryGetLocalOperandIndex(CodeInstruction instruction, out int localIndex)
+        {
             switch (instruction.operand)
             {
                 case int index:
                     localIndex = index;
                     return true;
                 case byte index:
+                    localIndex = index;
+                    return true;
+                case short index:
+                    localIndex = index;
+                    return true;
+                case ushort index:
                     localIndex = index;
                     return true;
                 case LocalBuilder local:
