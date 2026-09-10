@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using ValheimPlus.Configurations;
+using ValheimPlus.Utility;
 using System.Diagnostics;
 using JetBrains.Annotations;
 
@@ -22,6 +26,246 @@ namespace ValheimPlus.GameClasses
                 // then the timer will never become large enough to trigger the weather effect.
                 ___m_rainTimer = time;
             }
+        }
+
+    }
+
+    /// <summary>
+    /// Disables selected environmental wear contributions while preserving vanilla state and cadence.
+    /// </summary>
+    [HarmonyPatch(typeof(WearNTear), "UpdateWear")]
+    public static class WearNTear_UpdateWear_Transpiler
+    {
+        private static readonly FieldInfo Field_GameSnowDamage =
+            AccessTools.Field(typeof(Game), nameof(Game.m_snowDamage));
+        private static readonly FieldInfo Field_GameAshDamage =
+            AccessTools.Field(typeof(Game), nameof(Game.m_ashDamage));
+        private static readonly FieldInfo Field_WearNTearLavaValue =
+            AccessTools.Field(typeof(WearNTear), nameof(WearNTear.m_lavaValue));
+        private static readonly FieldInfo Field_WearNTearAshDamageResist =
+            AccessTools.Field(typeof(WearNTear), nameof(WearNTear.m_ashDamageResist));
+        private static readonly MethodInfo Method_AddHeavySnowWear =
+            AccessTools.Method(typeof(WearNTear_UpdateWear_Transpiler), nameof(AddHeavySnowWear));
+        private static readonly MethodInfo Method_AddAshWear =
+            AccessTools.Method(typeof(WearNTear_UpdateWear_Transpiler), nameof(AddAshWear));
+        private static readonly MethodInfo Method_AddLavaWear =
+            AccessTools.Method(typeof(WearNTear_UpdateWear_Transpiler), nameof(AddLavaWear));
+
+        /// <summary>
+        /// Replaces only the validated environmental wear additions with configuration-aware helpers.
+        /// </summary>
+        [HarmonyTranspiler]
+        [UsedImplicitly]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var original = instructions.ToList();
+
+            try
+            {
+                var snowAnchors = FindContributionAnchors(original, Field_GameSnowDamage);
+                var ashAnchors = FindContributionAnchors(original, Field_GameAshDamage);
+
+                if (snowAnchors.Count != 1 || ashAnchors.Count != 1)
+                {
+                    return FailClosed(original, "Expected exactly one heavy-snow and one ash contribution.");
+                }
+
+                var accumulator = snowAnchors[0].AccumulatorLocal;
+                if (accumulator != ashAnchors[0].AccumulatorLocal)
+                {
+                    return FailClosed(original, "Heavy-snow and ash contributions do not share the same wear accumulator.");
+                }
+
+                var lavaAnchors = FindLavaContributionAnchors(original, accumulator);
+                if (lavaAnchors.Count != 1)
+                {
+                    return FailClosed(original, "Expected exactly one lava contribution in the validated wear accumulator.");
+                }
+
+                if (Method_AddHeavySnowWear == null || Method_AddAshWear == null || Method_AddLavaWear == null)
+                {
+                    return FailClosed(original, "Wear contribution helpers could not be resolved.");
+                }
+
+                if (!IsAddInstruction(original, snowAnchors[0]) || !IsAddInstruction(original, ashAnchors[0]) ||
+                    !IsAddInstruction(original, lavaAnchors[0]))
+                {
+                    return FailClosed(original, "Validated wear anchors no longer point to add instructions.");
+                }
+
+                // Patch numeric contributions only; vanilla timers, state, gates, VFX, and ApplyDamage stay intact.
+                var patched = original.Select(instruction => new CodeInstruction(instruction)).ToList();
+                patched[snowAnchors[0].AddIndex] = ReplaceAdd(original[snowAnchors[0].AddIndex], Method_AddHeavySnowWear);
+                patched[ashAnchors[0].AddIndex] = ReplaceAdd(original[ashAnchors[0].AddIndex], Method_AddAshWear);
+                patched[lavaAnchors[0].AddIndex] = ReplaceAdd(original[lavaAnchors[0].AddIndex], Method_AddLavaWear);
+
+                return patched;
+            }
+            catch (Exception exception)
+            {
+                return FailClosed(original, "Wear damage contributions will be unchanged.", exception);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> FailClosed(
+            List<CodeInstruction> original, string detail, Exception exception = null)
+        {
+            PatchLog.Failed(nameof(WearNTear_UpdateWear_Transpiler), detail, exception);
+            return original;
+        }
+
+        private static bool IsAddInstruction(List<CodeInstruction> instructions, ContributionAnchor anchor)
+        {
+            return instructions[anchor.AddIndex].opcode == OpCodes.Add;
+        }
+
+        private static CodeInstruction ReplaceAdd(CodeInstruction original, MethodInfo helper)
+        {
+            return new CodeInstruction(OpCodes.Call, helper)
+            {
+                labels = original.labels,
+                blocks = original.blocks,
+            };
+        }
+
+        private static List<ContributionAnchor> FindContributionAnchors(
+            List<CodeInstruction> il, FieldInfo contributionField)
+        {
+            var anchors = new List<ContributionAnchor>();
+
+            for (var i = 0; i + 2 < il.Count; i++)
+            {
+                if (!il[i].LoadsField(contributionField) || il[i + 1].opcode != OpCodes.Add)
+                    continue;
+
+                if (TryGetLocalIndex(il[i + 2], out var accumulatorLocal))
+                    anchors.Add(new ContributionAnchor(i + 1, accumulatorLocal));
+            }
+
+            return anchors;
+        }
+
+        private static List<ContributionAnchor> FindLavaContributionAnchors(
+            List<CodeInstruction> il, int expectedAccumulatorLocal)
+        {
+            var anchors = new List<ContributionAnchor>();
+            var sawLavaValue = false;
+            var sawAshDamageResist = false;
+            var sawMultiplication = false;
+
+            for (var i = 0; i + 1 < il.Count; i++)
+            {
+                if (IsStoreToLocal(il[i], expectedAccumulatorLocal))
+                {
+                    sawLavaValue = false;
+                    sawAshDamageResist = false;
+                    sawMultiplication = false;
+                }
+
+                if (il[i].LoadsField(Field_WearNTearLavaValue))
+                    sawLavaValue = true;
+                if (il[i].LoadsField(Field_WearNTearAshDamageResist))
+                    sawAshDamageResist = true;
+                if (il[i].opcode == OpCodes.Mul)
+                    sawMultiplication = true;
+
+                if (il[i].opcode != OpCodes.Add || !TryGetLocalIndex(il[i + 1], out var storedLocal) ||
+                    storedLocal != expectedAccumulatorLocal || !sawLavaValue ||
+                    !sawAshDamageResist || !sawMultiplication)
+                    continue;
+
+                anchors.Add(new ContributionAnchor(i, storedLocal));
+            }
+
+            return anchors;
+        }
+
+        private static bool IsStoreToLocal(CodeInstruction instruction, int expectedLocal)
+        {
+            return TryGetLocalIndex(instruction, out var localIndex) && localIndex == expectedLocal &&
+                   (instruction.opcode == OpCodes.Stloc || instruction.opcode == OpCodes.Stloc_S ||
+                    instruction.opcode == OpCodes.Stloc_0 || instruction.opcode == OpCodes.Stloc_1 ||
+                    instruction.opcode == OpCodes.Stloc_2 || instruction.opcode == OpCodes.Stloc_3);
+        }
+
+        private static bool TryGetLocalIndex(CodeInstruction instruction, out int localIndex)
+        {
+            if (instruction.opcode == OpCodes.Stloc_0 || instruction.opcode == OpCodes.Ldloc_0)
+            {
+                localIndex = 0;
+                return true;
+            }
+            if (instruction.opcode == OpCodes.Stloc_1 || instruction.opcode == OpCodes.Ldloc_1)
+            {
+                localIndex = 1;
+                return true;
+            }
+            if (instruction.opcode == OpCodes.Stloc_2 || instruction.opcode == OpCodes.Ldloc_2)
+            {
+                localIndex = 2;
+                return true;
+            }
+            if (instruction.opcode == OpCodes.Stloc_3 || instruction.opcode == OpCodes.Ldloc_3)
+            {
+                localIndex = 3;
+                return true;
+            }
+
+            if (instruction.opcode != OpCodes.Stloc && instruction.opcode != OpCodes.Stloc_S &&
+                instruction.opcode != OpCodes.Ldloc && instruction.opcode != OpCodes.Ldloc_S)
+            {
+                localIndex = 0;
+                return false;
+            }
+
+            switch (instruction.operand)
+            {
+                case int index:
+                    localIndex = index;
+                    return true;
+                case byte index:
+                    localIndex = index;
+                    return true;
+                case LocalBuilder local:
+                    localIndex = local.LocalIndex;
+                    return true;
+                default:
+                    localIndex = 0;
+                    return false;
+            }
+        }
+
+        // Keep m_snowDamageTimer untouched: it schedules snow VFX; this gate suppresses only numeric wear.
+        private static float AddHeavySnowWear(float accumulated, float contribution)
+        {
+            var config = Configuration.Current.Building;
+            return config.IsEnabled && config.noHeavySnowDamage ? accumulated : accumulated + contribution;
+        }
+
+        // Keep m_ashDamageImmune untouched: it is vanilla eligibility state, not a numeric wear setting.
+        private static float AddAshWear(float accumulated, float contribution)
+        {
+            var config = Configuration.Current.Building;
+            return config.IsEnabled && config.noAshDamage ? accumulated : accumulated + contribution;
+        }
+
+        // Keep m_ashDamageImmune untouched for lava as well; only the lava contribution is configuration-gated.
+        private static float AddLavaWear(float accumulated, float contribution)
+        {
+            var config = Configuration.Current.Building;
+            return config.IsEnabled && config.noLavaDamage ? accumulated : accumulated + contribution;
+        }
+
+        private readonly struct ContributionAnchor
+        {
+            internal ContributionAnchor(int addIndex, int accumulatorLocal)
+            {
+                AddIndex = addIndex;
+                AccumulatorLocal = accumulatorLocal;
+            }
+
+            internal int AddIndex { get; }
+            internal int AccumulatorLocal { get; }
         }
     }
 
