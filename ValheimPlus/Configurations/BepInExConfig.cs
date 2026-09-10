@@ -27,6 +27,9 @@ namespace ValheimPlus.Configurations
 
         private static bool serverSyncRegistered;
 
+        /// <summary>Whether a config package has already been taken this connection.</summary>
+        private static bool syncedOnce;
+
         /// <summary>What a legacy valheim_plus.cfg on disk is being used for.</summary>
         private enum LegacyMode
         {
@@ -86,7 +89,20 @@ namespace ValheimPlus.Configurations
                 if (isSourceOfTruth) ReapplyPatches("Config source changed");
             };
 
-            ConfigSyncGlue.ConfigApplied += () => ReapplyPatches("Received config from the server");
+            // Rebuilding patches mid-world would swap code out from under a running game, so only
+            // the first package of a connection is taken.
+            ConfigSyncGlue.ConfigApplied += () =>
+            {
+                if (syncedOnce)
+                {
+                    ValheimPlusPlugin.Logger.LogDebug(
+                        "Config arrived while in a world, so patches were left alone.");
+                    return;
+                }
+
+                syncedOnce = true;
+                ReapplyPatches("Received config from the server");
+            };
 
             // Decides whether non-admins may change synced settings while connected.
             ConfigSyncGlue.RegisterLocking((ConfigEntry<bool>)Config[
@@ -109,6 +125,10 @@ namespace ValheimPlus.Configurations
         /// </summary>
         public static void RegisterForServerSync()
         {
+            // A server's patches already match its own config, so a push must not rebuild them.
+            // Assigned before the guard below, since only this runs on every world entered.
+            syncedOnce = ZNet.m_isServer;
+
             if (serverSyncRegistered) return;
 
             if (ZNet.m_isServer && !Configuration.Current.Server.serverSyncsConfig)
