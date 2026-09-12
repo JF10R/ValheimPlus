@@ -491,7 +491,7 @@ namespace ValheimPlus.GameClasses
 
             if (Configuration.Current.GridAlignment.IsEnabled)
             {
-                if (GridAlignment.AlignPressed ^ GridAlignment.AlignToggled)
+                if (GridAlignment.IsAligning)
                     GridAlignment.UpdatePlacementGhost(__instance);
             }
 
@@ -695,6 +695,9 @@ namespace ValheimPlus.GameClasses
         public static bool AlignPressed = false;
         public static bool AlignToggled = false;
 
+        public static bool IsAligning =>
+            Configuration.Current.GridAlignment.IsEnabled && (AlignPressed ^ AlignToggled);
+
         private static void Postfix(ref Player __instance)
         {
             if (__instance != Player.m_localPlayer)
@@ -846,6 +849,34 @@ namespace ValheimPlus.GameClasses
 
             newVal = piece.transform.rotation * newVal;
             piece.transform.position = newVal;
+        }
+    }
+
+    /// <summary>
+    /// Keeps the grid direction stable while aligning by undoing random build rotation (e.g. crops).
+    /// </summary>
+    [HarmonyPatch(typeof(Player), nameof(Player.PlacePiece))]
+    public static class Player_PlacePiece_KeepGridRotation_Patch
+    {
+        private static void Prefix(Player __instance, out int __state) => __state = __instance.m_placeRotation;
+
+        private static void Postfix(Player __instance, int __state)
+        {
+            if (GridAlignment.IsAligning) __instance.m_placeRotation = __state;
+        }
+    }
+
+    /// <summary>
+    /// Keeps the grid direction stable when the ghost is rebuilt, e.g. after seeds are consumed.
+    /// </summary>
+    [HarmonyPatch(typeof(Player), nameof(Player.SetupPlacementGhost))]
+    public static class Player_SetupPlacementGhost_KeepGridRotation_Patch
+    {
+        private static void Prefix(Player __instance, out int __state) => __state = __instance.m_placeRotation;
+
+        private static void Postfix(Player __instance, int __state)
+        {
+            if (GridAlignment.IsAligning) __instance.m_placeRotation = __state;
         }
     }
 
