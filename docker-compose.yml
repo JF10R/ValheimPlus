@@ -15,7 +15,7 @@ services:
       MODS: "JereKuusela-Server_devcommands-*"
 
       # 0 if you need to change bepinex config so it doesn't get clobbered, 
-      # 1 if you need to update the game, but it will clobber the config
+      # 1 if you need to update the game, but it will clobber the bepinex config
       UPDATE_ON_STARTUP: 0
 
     volumes:
