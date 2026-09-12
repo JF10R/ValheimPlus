@@ -296,6 +296,9 @@
   <Target Name="CopyFiles" AfterTargets="PostBuildEvent">
     <PropertyGroup>
       <Dest>$(VALHEIM_INSTALL)/BepInEx/plugins</Dest>
+      <!-- Plugins folder of the docker-compose server (./valheim/server mount); override with VALHEIM_SERVER_PLUGINS. -->
+      <ServerDest Condition="'$(VALHEIM_SERVER_PLUGINS)' != ''">$(VALHEIM_SERVER_PLUGINS)</ServerDest>
+      <ServerDest Condition="'$(VALHEIM_SERVER_PLUGINS)' == ''">$(SolutionDir)valheim\server\BepInEx\plugins</ServerDest>
     </PropertyGroup>
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Dest)" />
     <Copy SourceFiles="$(TargetDir)ValheimPlus.pdb" DestinationFolder="$(Dest)" />
@@ -306,6 +309,11 @@
     so don't attempt to generate MDBs if build platform is not Windows. -->
     <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="&quot;$(SolutionDir)resources\tools\pdb2mdb.exe&quot; &quot;$(TargetPath)&quot;" />
     <Copy Condition="$([MSBuild]::IsOSPlatform('Windows'))" SourceFiles="$(TargetDir)ValheimPlus.dll.mdb" DestinationFolder="$(Dest)" />
+    <Message Condition="!Exists('$(ServerDest)')" Importance="high" Text="Docker server plugins folder '$(ServerDest)' not found, skipping server copy." />
+    <Copy Condition="Exists('$(ServerDest)')" SourceFiles="$(TargetPath)" DestinationFolder="$(ServerDest)" />
+    <Copy Condition="Exists('$(ServerDest)')" SourceFiles="$(TargetDir)ValheimPlus.pdb" DestinationFolder="$(ServerDest)" />
+    <Copy Condition="Exists('$(ServerDest)')" SourceFiles="$(TargetDir)ValheimPlus.dll.config" DestinationFolder="$(ServerDest)" />
+    <Copy Condition="Exists('$(ServerDest)') And $([MSBuild]::IsOSPlatform('Windows'))" SourceFiles="$(TargetDir)ValheimPlus.dll.mdb" DestinationFolder="$(ServerDest)" />
   </Target>
   <Import Project="..\packages\ILRepack.Lib.MSBuild.Task.2.0.33\build\ILRepack.Lib.MSBuild.Task.targets" Condition="Exists('..\packages\ILRepack.Lib.MSBuild.Task.2.0.33\build\ILRepack.Lib.MSBuild.Task.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
