@@ -27,7 +27,11 @@ namespace ValheimPlus.Configurations.Sections
 
         public bool inventoryFillTopToBottom => inventoryFillTopToBottomEntry.Value;
         public bool mergeWithExistingStacks => mergeWithExistingStacksEntry.Value;
-        public int playerInventoryRows => Math.Min(9, Math.Max(4, playerInventoryRowsEntry.Value));
+        public int playerInventoryRows
+        {
+            get => Math.Min(9, Math.Max(4, playerInventoryRowsEntry.Value));
+            internal set => playerInventoryRowsEntry.Value = value;
+        }
         public int woodChestColumns => woodChestColumnsEntry.Value;
         public int woodChestRows => woodChestRowsEntry.Value;
         public int personalChestColumns => personalChestColumnsEntry.Value;

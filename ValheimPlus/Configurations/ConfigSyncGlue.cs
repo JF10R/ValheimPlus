@@ -73,6 +73,9 @@ namespace ValheimPlus.Configurations
             if (__result) ConfigApplied?.Invoke();
         }
 
+        /// <summary>False while a server's values are in effect.</summary>
+        public static bool IsSourceOfTruth => configSync == null || configSync.IsSourceOfTruth;
+
         public static void SetModRequired(bool required)
         {
             if (configSync != null) configSync.ModRequired = required;

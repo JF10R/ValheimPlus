@@ -1,4 +1,5 @@
-﻿using BepInEx.Configuration;
+﻿using BepInEx.Bootstrap;
+using BepInEx.Configuration;
 using IniParser;
 using IniParser.Model;
 using System;
@@ -18,6 +19,8 @@ namespace ValheimPlus.Configurations
     {
         /// <summary>Suffix given to the legacy ini once its values have been imported.</summary>
         private const string RetiredSuffix = ".migrated";
+
+        internal const string EquipmentAndQuickSlotsGuid = "randyknapp.mods.equipmentandquickslots";
 
         /// <summary>The file every section's entries are bound to.</summary>
         public static ConfigFile Config { get; private set; }
@@ -68,6 +71,7 @@ namespace ValheimPlus.Configurations
                 config.SaveOnConfigSet = true;
             }
 
+            ResolveModConflicts();
             LogChangedSettings("differ from their default");
 
             if (mode == LegacyMode.Migrate) RetireLegacyIni(config);
@@ -116,6 +120,7 @@ namespace ValheimPlus.Configurations
         internal static void ReapplyPatches(string reason)
         {
             ValheimPlusPlugin.Logger.LogInfo($"{reason}, re-applying patches.");
+            ResolveModConflicts();
             LogChangedSettings("changed since patches were last applied");
             ValheimPlusPlugin.UnpatchSelf();
             ValheimPlusPlugin.PatchAll();
@@ -199,6 +204,39 @@ namespace ValheimPlus.Configurations
 
             ValheimPlusPlugin.Logger.LogInfo($"{changed.Count} settings {description}:");
             foreach (var line in changed) ValheimPlusPlugin.Logger.LogInfo(line);
+        }
+
+        /// <summary>Resets settings known to break alongside another installed mod. One block per conflict.</summary>
+        private static void ResolveModConflicts()
+        {
+            if (Configuration.Current.Inventory.IsEnabled &&
+                Configuration.Current.Inventory.playerInventoryRows > 4 &&
+                Chainloader.PluginInfos.ContainsKey(EquipmentAndQuickSlotsGuid))
+            {
+                ResolveModConflict(
+                    $"[Inventory] playerInventoryRows is {Configuration.Current.Inventory.playerInventoryRows}, " +
+                    "which conflicts with Equipment and Quick Slots. Use that mod's " +
+                    "\"Extra Inventory Rows\" setting instead.",
+                    "4",
+                    () => Configuration.Current.Inventory.playerInventoryRows = 4);
+            }
+        }
+
+        /// <summary>Resets one conflicting setting with a warning, unless a server's values are in effect.</summary>
+        private static void ResolveModConflict(string problem, string resetValue, Action reset)
+        {
+            // A server's value is its own to change, and writing it here would be reverted or pushed back up.
+            if (ConfigSyncGlue.IsSourceOfTruth)
+            {
+                ValheimPlusPlugin.Logger.LogWarning(
+                    $"{problem} It has been reset to {resetValue}. " +
+                    $"Setting it to {resetValue} in your own config makes this warning go away.");
+                reset();
+            }
+            else
+            {
+                ValheimPlusPlugin.Logger.LogDebug($"{problem} The server set this value, so it was left alone.");
+            }
         }
 
         private static Configuration BindSections(ConfigFile config)
