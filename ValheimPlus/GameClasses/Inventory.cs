@@ -541,7 +541,7 @@ namespace ValheimPlus.GameClasses
         {
             public bool Starts;
             public bool Message;
-            public int ItemsBefore;
+            public int ChestItemsBefore;
         }
 
         /// <summary>Hold back the game's message for a call that starts a sweep, which shows a summary instead.</summary>
@@ -562,7 +562,7 @@ namespace ValheimPlus.GameClasses
             {
                 Starts = true,
                 Message = message,
-                ItemsBefore = fromInventory.CountItems(null)
+                ChestItemsBefore = __instance.CountItems(null)
             };
             message = false;
             return true;
@@ -570,11 +570,11 @@ namespace ValheimPlus.GameClasses
 
         /// <summary>Start the sweep over nearby chests.</summary>
         [UsedImplicitly]
-        private static void Postfix(Inventory fromInventory, ref int __result, SweepStart __state)
+        private static void Postfix(Inventory __instance, ref int __result, SweepStart __state)
         {
             if (!__state.Starts) return;
 
-            var moved = __state.ItemsBefore - fromInventory.CountItems(null);
+            var moved = __instance.CountItems(null) - __state.ChestItemsBefore;
 
             // Without its message the game returns the chest's total, so give the caller what actually moved.
             if (__state.Message) __result = moved;
