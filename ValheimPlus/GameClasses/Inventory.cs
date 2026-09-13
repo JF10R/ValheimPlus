@@ -64,7 +64,10 @@ namespace ValheimPlus.GameClasses
         [UsedImplicitly]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (!Configuration.Current.Inventory.IsEnabled) return instructions;
+            if (!Configuration.Current.Inventory.IsEnabled || Configuration.Current.Inventory.playerInventoryRows <= 4)
+            {
+                return instructions;
+            }
 
             var il = instructions.ToList();
             try
@@ -105,7 +108,10 @@ namespace ValheimPlus.GameClasses
         [UsedImplicitly]
         public static void Prefix(Player __instance)
         {
-            if (!Configuration.Current.Inventory.IsEnabled) return;
+            if (!Configuration.Current.Inventory.IsEnabled || Configuration.Current.Inventory.playerInventoryRows <= 4)
+            {
+                return;
+            }
             if (__instance == null) return;
 
             // Height only, and no GUI, which is sized on spawn once InventoryGui exists.
@@ -125,7 +131,10 @@ namespace ValheimPlus.GameClasses
         [UsedImplicitly]
         public static void Postfix(Player __instance)
         {
-            if (!Configuration.Current.Inventory.IsEnabled) return;
+            if (!Configuration.Current.Inventory.IsEnabled || Configuration.Current.Inventory.playerInventoryRows <= 4)
+            {
+                return;
+            }
             if (__instance == null || __instance != Player.m_localPlayer) return;
 
             // Size directly, since SetInventorySize would save the config value as the character's own.
