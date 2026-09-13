@@ -93,7 +93,10 @@ namespace ValheimPlus.Configurations
             // Only the return to our own values. The other direction is handled in ConfigApplied.
             ConfigSyncGlue.SourceOfTruthChanged += isSourceOfTruth =>
             {
-                if (isSourceOfTruth) ReapplyPatches("Config source changed");
+                if (!isSourceOfTruth) return;
+
+                Config.Save();
+                ReapplyPatches("Config source changed");
             };
 
             // Rebuilding patches mid-world would swap code out from under a running game, so only
