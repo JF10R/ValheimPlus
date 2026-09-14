@@ -60,6 +60,49 @@ namespace ValheimPlus.GameClasses
             }
         }
 
+        private static readonly string[] AutoDepositSmelterNames =
+        {
+            SmelterDefinitions.KilnName, SmelterDefinitions.SmelterName, SmelterDefinitions.FurnaceName,
+            SmelterDefinitions.WindmillName, SmelterDefinitions.SpinningWheelName, SmelterDefinitions.EitrRefineryName
+        };
+
+        // Hold the first update, catch-up included, until nearby chests have loaded to receive the output.
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            if (!AutoDepositSmelterNames.Any(AutoDepositEnabled)) return instructions;
+
+            return GameObjectAssistant.ReplaceInvokeRepeating(instructions, nameof(Smelter_Awake_Patch),
+                nameof(Smelter.UpdateSmelter), AccessTools.Method(typeof(Smelter_Awake_Patch), nameof(InvokeRepeatingWhenChestsLoaded)));
+        }
+
+        private static void InvokeRepeatingWhenChestsLoaded(Smelter smelter, string methodName, float delay, float rate) =>
+            GameObjectAssistant.InvokeRepeatingWhenChestsLoaded(smelter, methodName, delay, rate,
+                AutoDepositEnabled(smelter.m_name) ? Helper.Clamp(AutoRange(smelter.m_name), 1, 50) : 0f);
+
+        private static float AutoRange(string name)
+        {
+            var config = Configuration.Current;
+            if (name.Equals(SmelterDefinitions.KilnName)) return config.Kiln.autoRange;
+            if (name.Equals(SmelterDefinitions.SmelterName)) return config.Smelter.autoRange;
+            if (name.Equals(SmelterDefinitions.FurnaceName)) return config.Furnace.autoRange;
+            if (name.Equals(SmelterDefinitions.WindmillName)) return config.Windmill.autoRange;
+            if (name.Equals(SmelterDefinitions.SpinningWheelName)) return config.SpinningWheel.autoRange;
+            if (name.Equals(SmelterDefinitions.EitrRefineryName)) return config.EitrRefinery.autoRange;
+            return 0f;
+        }
+
+        private static bool AutoDepositEnabled(string name)
+        {
+            var config = Configuration.Current;
+            if (name.Equals(SmelterDefinitions.KilnName)) return config.Kiln.IsEnabled && config.Kiln.autoDeposit;
+            if (name.Equals(SmelterDefinitions.SmelterName)) return config.Smelter.IsEnabled && config.Smelter.autoDeposit;
+            if (name.Equals(SmelterDefinitions.FurnaceName)) return config.Furnace.IsEnabled && config.Furnace.autoDeposit;
+            if (name.Equals(SmelterDefinitions.WindmillName)) return config.Windmill.IsEnabled && config.Windmill.autoDeposit;
+            if (name.Equals(SmelterDefinitions.SpinningWheelName)) return config.SpinningWheel.IsEnabled && config.SpinningWheel.autoDeposit;
+            if (name.Equals(SmelterDefinitions.EitrRefineryName)) return config.EitrRefinery.IsEnabled && config.EitrRefinery.autoDeposit;
+            return false;
+        }
     }
 
     [HarmonyPatch(typeof(Smelter), nameof(Smelter.Spawn))]

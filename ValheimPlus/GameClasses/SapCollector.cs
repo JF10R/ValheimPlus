@@ -22,6 +22,25 @@ namespace ValheimPlus.GameClasses
                 ___m_secPerUnit = config.sapProductionSpeed;
                 ___m_maxLevel = config.maximumSapPerCollector;
             }
+
+            // Hold the first auto-deposit until nearby chests have loaded.
+            [HarmonyTranspiler]
+            [UsedImplicitly]
+            private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var config = Configuration.Current.SapCollector;
+                if (!config.IsEnabled || !config.autoDeposit) return instructions;
+
+                return Utility.GameObjectAssistant.ReplaceInvokeRepeating(instructions, nameof(SapCollector_Awake_Patch),
+                    nameof(SapCollector.UpdateTick), AccessTools.Method(typeof(SapCollector_Awake_Patch), nameof(InvokeRepeatingWhenChestsLoaded)));
+            }
+
+            private static void InvokeRepeatingWhenChestsLoaded(SapCollector sapCollector, string methodName, float delay, float rate)
+            {
+                var config = Configuration.Current.SapCollector;
+                Utility.GameObjectAssistant.InvokeRepeatingWhenChestsLoaded(sapCollector, methodName, delay, rate,
+                    config.IsEnabled && config.autoDeposit ? Helper.Clamp(config.autoDepositRange, 1, 50) : 0f);
+            }
         }
 
         /// <summary>

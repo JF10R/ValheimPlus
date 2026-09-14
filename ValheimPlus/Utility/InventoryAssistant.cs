@@ -48,6 +48,92 @@ namespace ValheimPlus
             return true;
         }
 
+        // A chest's collider can reach into range while its root sits just outside.
+        private const float ChestRangeSlack = 2f;
+        private static readonly List<ZDO> NearbyZdos = new List<ZDO>();
+        private static readonly Dictionary<int, ChestPrefab> ChestPrefabs = new Dictionary<int, ChestPrefab>();
+
+        /// <summary>
+        /// Whether every chest a machine could use within range has spawned and loaded its inventory. Chests in zones
+        /// this peer doesn't spawn are skipped.
+        /// </summary>
+        public static bool NearbyChestsLoaded(Vector3 position, float range)
+        {
+            // Range is capped at 50, under a zone's 64, so the surrounding 3x3 zones cover it.
+            NearbyZdos.Clear();
+            ZDOMan.instance.FindSectorObjects(ZoneSystem.GetZone(position), new SimulationDistance(1, 0), NearbyZdos);
+
+            foreach (ZDO zdo in NearbyZdos)
+            {
+                Vector3 chestPosition = zdo.GetPosition();
+                if (Vector3.Distance(position, chestPosition) > range + ChestRangeSlack ||
+                    !MachineCouldUseChest(zdo) ||
+                    !SpawnsOnThisPeer(chestPosition))
+                    continue;
+
+                ZNetView view = ZNetScene.instance.FindInstance(zdo);
+                if (!view) return false;
+
+                Container container = view.GetComponentInChildren<Container>();
+                if (container && container.m_lastRevision == uint.MaxValue) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Whether objects at position spawn on this peer. Mirrors ZNetScene.CreateDestroyObjects, which spawns out to the
+        /// simulation distance setting; ZNetScene.OutsideActiveArea assumes 1.5 zones and misses the rest.
+        /// </summary>
+        public static bool SpawnsOnThisPeer(Vector3 position)
+        {
+            SimulationDistance distance = ZNet.instance.GetSyncedSimulationDistance();
+            Vector2s referenceZone = ZoneSystem.GetZone(ZNet.instance.GetReferencePosition());
+            Vector2s zone = ZoneSystem.GetZone(position);
+            int near = distance.NearSimulationDistance;
+
+            return Mathf.Abs(zone.x - referenceZone.x) <= near && Mathf.Abs(zone.y - referenceZone.y) <= near &&
+                   (distance.IsClassic || ZoneSystem.instance.ZonesWithinRadius(referenceZone, zone, near));
+        }
+
+        // What a prefab says about it as a machine chest. Prefabs don't change, so it's cached per prefab hash.
+        private struct ChestPrefab
+        {
+            public bool IsPublicPieceContainer;
+            public bool IsCart;
+            public bool IsShip;
+        }
+
+        /// <summary>
+        /// Whether a chest ZDO passes the machine filters of FindNearbyChests that don't need the chest spawned: a public
+        /// container on a player-placed piece, or on a cart or ship when allowed. Wards aren't checked.
+        /// </summary>
+        public static bool MachineCouldUseChest(ZDO zdo)
+        {
+            int prefabHash = zdo.GetPrefab();
+            if (!ChestPrefabs.TryGetValue(prefabHash, out ChestPrefab chest))
+            {
+                GameObject prefab = ZNetScene.instance.GetPrefab(prefabHash);
+                Container container = prefab != null ? prefab.GetComponentInChildren<Container>(true) : null;
+                if (container != null)
+                {
+                    chest.IsPublicPieceContainer = container.m_privacy == Container.PrivacySetting.Public &&
+                                                   container.GetComponentInParent<Piece>(true) != null;
+                    chest.IsCart = container.GetComponentInParent<Vagon>(true) != null;
+                    chest.IsShip = container.GetComponentInParent<Ship>(true) != null;
+                }
+
+                ChestPrefabs[prefabHash] = chest;
+            }
+
+            if (!chest.IsPublicPieceContainer) return false;
+
+            var config = Configuration.Current.CraftFromChest;
+            if (chest.IsShip) return config.allowCraftingFromShips;
+            if (chest.IsCart && !config.allowCraftingFromCarts) return false;
+            return zdo.GetLong(ZDOVars.s_creator) != 0L;
+        }
+
         /// <summary>
         /// Removes up to amount of the item from the given chests, in order.
         /// </summary>

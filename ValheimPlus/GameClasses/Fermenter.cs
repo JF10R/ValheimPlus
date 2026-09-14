@@ -29,6 +29,24 @@ namespace ValheimPlus.GameClasses
 
             return true;
         }
+
+        // A fermenter that finished while unloaded taps on its first update, so hold that until nearby chests have loaded.
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            if (!Configuration.Current.Fermenter.IsEnabled || !Configuration.Current.Fermenter.autoDeposit)
+                return instructions;
+
+            return GameObjectAssistant.ReplaceInvokeRepeating(instructions, nameof(ApplyFermenterChanges),
+                nameof(Fermenter.SlowUpdate), AccessTools.Method(typeof(ApplyFermenterChanges), nameof(InvokeRepeatingWhenChestsLoaded)));
+        }
+
+        private static void InvokeRepeatingWhenChestsLoaded(Fermenter fermenter, string methodName, float delay, float rate)
+        {
+            var config = Configuration.Current.Fermenter;
+            GameObjectAssistant.InvokeRepeatingWhenChestsLoaded(fermenter, methodName, delay, rate,
+                config.IsEnabled && config.autoDeposit ? Helper.Clamp(config.autoRange, 1, 50) : 0f);
+        }
     }
 
     /// <summary>

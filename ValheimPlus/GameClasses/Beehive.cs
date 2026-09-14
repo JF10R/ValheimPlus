@@ -30,14 +30,20 @@ namespace ValheimPlus.GameClasses
 
     /// <summary>
     /// Adjusts the InvokeRepeating("UpdateBees") timing:
-    /// - Delays the first call by 1 second to allow containers to load their inventory from ZDO.
-    ///   This prevents a race condition where auto-deposit could overwrite a container's saved contents
-    ///   by mistaking a freshly init-ed inventory for an empty one.
+    /// - Holds the first call until nearby chests have loaded their inventory from ZDO, so honey isn't dropped
+    ///   and a freshly init-ed inventory isn't mistaken for an empty one.
     /// - Adjusts the repeat interval to match honey production speed so auto-deposit triggers promptly.
     /// </summary>
     [HarmonyPatch(typeof(Beehive), nameof(Beehive.Awake))]
     public static class Beehive_Awake_Transpiler
     {
+        private static void InvokeRepeatingWhenChestsLoaded(Beehive beehive, string methodName, float delay, float rate)
+        {
+            var config = Configuration.Current.Beehive;
+            GameObjectAssistant.InvokeRepeatingWhenChestsLoaded(beehive, methodName, delay, rate,
+                config.IsEnabled && config.autoDeposit ? Helper.Clamp(config.autoDepositRange, 1, 50) : 0f);
+        }
+
         [UsedImplicitly]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -61,9 +67,9 @@ namespace ValheimPlus.GameClasses
                         new CodeMatch(OpCodes.Call, invokeRepeatingMethod)
                     )
                     .ThrowIfNotMatch("No match for InvokeRepeating(\"UpdateBees\", float, float).")
-                    .Advance(1)
-                    .SetOperandAndAdvance(1f)
+                    .Advance(2)
                     .SetOperandAndAdvance(repeatInterval)
+                    .SetOperandAndAdvance(AccessTools.Method(typeof(Beehive_Awake_Transpiler), nameof(InvokeRepeatingWhenChestsLoaded)))
                     .InstructionEnumeration();
             }
             catch (System.Exception e)
