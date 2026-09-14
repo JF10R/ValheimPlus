@@ -72,7 +72,6 @@ namespace ValheimPlus.Configurations
                 config.SaveOnConfigSet = true;
             }
 
-            ResolveModConflicts();
             LogChangedSettings("differ from their default");
 
             if (mode == LegacyMode.Migrate) RetireLegacyIni(config);
@@ -210,8 +209,8 @@ namespace ValheimPlus.Configurations
             foreach (var line in changed) ValheimPlusPlugin.Logger.LogInfo(line);
         }
 
-        /// <summary>Resets settings known to break alongside another installed mod. One block per conflict.</summary>
-        private static void ResolveModConflicts()
+        /// <summary>Resets settings known to break alongside another installed mod.</summary>
+        internal static void ResolveModConflicts()
         {
             var configuredRows = Configuration.Current.Inventory.playerInventoryRows;
             if (Configuration.Current.Inventory.IsEnabled && configuredRows > 4)

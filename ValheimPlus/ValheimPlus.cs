@@ -22,9 +22,6 @@ namespace ValheimPlus
         BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(ConfigurationManagerWatcher.ShudnalConfigurationManagerGuid,
         BepInDependency.DependencyFlags.SoftDependency)]
-    // We check for some mod conflicts, so add this dependency so we load after it.
-    [BepInDependency(BepInExConfig.EquipmentAndQuickSlotsGuid, BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency(BepInExConfig.ExtraSlotsGuid, BepInDependency.DependencyFlags.SoftDependency)]
     public class ValheimPlusPlugin : BaseUnityPlugin
     {
         internal const string ValheimPlusGuid = "org.bepinex.plugins.valheim_plus";
@@ -72,6 +69,8 @@ namespace ValheimPlus
 
         private static readonly Harmony Harmony = new("mod.valheim_plus");
 
+        private static bool configLoaded;
+
         // Project Repository Info
         public const string Repository = "https://github.com/Grantapher/ValheimPlus/releases/latest";
         private const string ApiRepository = "https://api.github.com/repos/grantapher/valheimPlus/releases/latest";
@@ -102,6 +101,7 @@ namespace ValheimPlus
             try
             {
                 BepInExConfig.Load(Config);
+                configLoaded = true;
                 Logger.LogInfo($"Configuration loaded successfully from '{Config.ConfigFilePath}'.");
 
                 PatchAll();
@@ -132,6 +132,12 @@ namespace ValheimPlus
             {
                 Logger.LogError($"Error while loading the configuration: {e}");
             }
+        }
+
+        // Start runs after every plugin's Awake, so mods loading after us are visible to the conflict checks.
+        private void Start()
+        {
+            if (configLoaded) BepInExConfig.ResolveModConflicts();
         }
 
         private static bool IsGameVersionTooOld() => Version.CurrentVersion < MinSupportedGameVersion;
