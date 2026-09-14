@@ -97,7 +97,7 @@ namespace ValheimPlus.GameClasses
             }
             bool spawn(float autoDepositRange, bool ignorePrivateAreaCheck)
             {
-                List<Container> nearbyChests = InventoryAssistant.GetNearbyChests(smelter.gameObject, autoDepositRange, !ignorePrivateAreaCheck);
+                List<Container> nearbyChests = InventoryAssistant.GetNearbyChestsForMachine(smelter.gameObject, autoDepositRange, !ignorePrivateAreaCheck);
                 if (nearbyChests.Count == 0)
                     return true;
 
@@ -166,7 +166,7 @@ namespace ValheimPlus.GameClasses
     {
         static void Prefix(Smelter __instance)
         {
-            if (__instance == null || !Player.m_localPlayer || __instance.m_nview == null || !__instance.m_nview.IsOwner())
+            if (__instance == null || __instance.m_nview == null || !__instance.m_nview.IsOwner())
                 return;
 
             Smelter smelter = __instance;
@@ -251,7 +251,9 @@ namespace ValheimPlus.GameClasses
                 ItemDrop.ItemData fuelItemData = smelter.m_fuelItem.m_itemData;
 
                 // Check for fuel in nearby containers
-                int addedFuel = InventoryAssistant.RemoveItemInAmountFromAllNearbyChests(smelter.gameObject, autoFuelRange, fuelItemData, toMaxFuel, !ignorePrivateAreaCheck);
+                int addedFuel = InventoryAssistant.RemoveItemInAmountFromChests(
+                    InventoryAssistant.GetNearbyChestsForMachine(smelter.gameObject, autoFuelRange, !ignorePrivateAreaCheck),
+                    fuelItemData, toMaxFuel);
                 for (int i = 0; i < addedFuel; i++)
                 {
                     smelter.m_nview.InvokeRPC("RPC_AddFuel", new object[] { });
@@ -261,7 +263,7 @@ namespace ValheimPlus.GameClasses
             }
             if (toMaxOre > 0)
             {
-                List<Container> nearbyChests = InventoryAssistant.GetNearbyChests(smelter.gameObject, autoFuelRange);
+                List<Container> nearbyChests = InventoryAssistant.GetNearbyChestsForMachine(smelter.gameObject, autoFuelRange, !ignorePrivateAreaCheck);
                 foreach (Container c in nearbyChests)
                 {
                     foreach (Smelter.ItemConversion itemConversion in smelter.m_conversion)

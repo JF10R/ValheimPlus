@@ -74,7 +74,7 @@ namespace ValheimPlus.GameClasses
             if (__instance.m_nview?.IsOwner() != true) return;
 
             // find nearby chests
-            var nearbyChests = InventoryAssistant.GetNearbyChests(__instance.gameObject,
+            var nearbyChests = InventoryAssistant.GetNearbyChestsForMachine(__instance.gameObject,
                 Helper.Clamp(Configuration.Current.SapCollector.autoDepositRange, 1, 50));
             
             if (nearbyChests.Count == 0) return;

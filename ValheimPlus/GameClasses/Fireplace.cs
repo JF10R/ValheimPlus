@@ -96,8 +96,9 @@ namespace ValheimPlus.GameClasses
 
                 var fuelItemData = __instance.m_fuelItem.m_itemData;
                 var range = Helper.Clamp(config.autoRange, 1, 50);
-                int addedFuel = InventoryAssistant.RemoveItemInAmountFromAllNearbyChests(
-                    __instance.gameObject, range, fuelItemData, toMaxFuel, !config.ignorePrivateAreaCheck);
+                int addedFuel = InventoryAssistant.RemoveItemInAmountFromChests(
+                    InventoryAssistant.GetNearbyChestsForMachine(__instance.gameObject, range, !config.ignorePrivateAreaCheck),
+                    fuelItemData, toMaxFuel);
 
                 if (addedFuel <= 0) return 0;
 

@@ -156,7 +156,7 @@ namespace ValheimPlus.GameClasses
             float autoDepositRange = Helper.Clamp(Configuration.Current.Beehive.autoDepositRange, 1, 50);
 
             // find nearby chests
-            List<Container> nearbyChests = InventoryAssistant.GetNearbyChests(beehive.gameObject, autoDepositRange);
+            List<Container> nearbyChests = InventoryAssistant.GetNearbyChestsForMachine(beehive.gameObject, autoDepositRange);
             if (nearbyChests.Count == 0)
                 return true;
 
@@ -238,10 +238,10 @@ namespace ValheimPlus.GameClasses
         {
             Beehive beehive = __instance;
 
-            List<Container> nearbyChests = InventoryAssistant.GetNearbyChests(beehive.gameObject, Helper.Clamp(Configuration.Current.Beehive.autoDepositRange, 1, 50));
-
-            if (beehive.GetHoneyLevel() != beehive.m_maxHoney)
+            if (!beehive.m_nview.IsOwner() || beehive.GetHoneyLevel() != beehive.m_maxHoney)
                 return;
+
+            List<Container> nearbyChests = InventoryAssistant.GetNearbyChestsForMachine(beehive.gameObject, Helper.Clamp(Configuration.Current.Beehive.autoDepositRange, 1, 50));
 
             while (beehive.GetHoneyLevel() > 0)
             {

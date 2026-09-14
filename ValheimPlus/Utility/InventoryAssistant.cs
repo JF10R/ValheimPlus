@@ -10,15 +10,64 @@ namespace ValheimPlus
     {
 
         /// <summary>
-        /// Get all valid nearby chests. Carts and ships are left out when includeVehicles is false.
+        /// Chests the local player may use. Carts and ships are left out when includeVehicles is false.
         /// </summary>
         public static List<Container> GetNearbyChests(GameObject target, float range, bool checkWard = true,
             bool includeVehicles = true)
         {
-            // Every container is filtered by what the local player may access, so without one there
-            // is nothing to return. Null between worlds and always on a dedicated server.
+            // Player features act as the local player, so there is nothing to find without one.
             if (!Player.m_localPlayer) return new List<Container>();
 
+            long playerId = Player.m_localPlayer.GetPlayerID();
+            return FindNearbyChests(target, range, includeVehicles, (container, position) =>
+                container.CheckAccess(playerId) &&
+                (!checkWard || PrivateArea.CheckAccess(position, 0f, false, true)));
+        }
+
+        /// <summary>
+        /// Chests a machine may use, the same on every peer: public chests not under a ward the machine is outside of.
+        /// </summary>
+        public static List<Container> GetNearbyChestsForMachine(GameObject machine, float range, bool checkWard = true)
+        {
+            Vector3 machinePosition = machine.transform.position;
+            return FindNearbyChests(machine, range, includeVehicles: true, (container, position) =>
+                container.m_privacy == Container.PrivacySetting.Public &&
+                (!checkWard || SharesWards(machinePosition, position)));
+        }
+
+        // A warded chest is off-limits unless the machine is under the same wards. Location only, so ward
+        // access removed later, or a ward overlapping the chest from outside, isn't accounted for.
+        private static bool SharesWards(Vector3 machine, Vector3 chest)
+        {
+            foreach (PrivateArea area in PrivateArea.m_allAreas)
+            {
+                if (area && area.IsEnabled() && area.IsInside(chest, 0f) && !area.IsInside(machine, 0f))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Removes up to amount of the item from the given chests, in order.
+        /// </summary>
+        public static int RemoveItemInAmountFromChests(List<Container> chests, ItemDrop.ItemData needle, int amount)
+        {
+            int removedTotal = 0;
+            foreach (Container chest in chests)
+            {
+                if (amount <= 0) break;
+                int removed = RemoveItemFromChest(chest, needle, amount);
+                removedTotal += removed;
+                amount -= removed;
+            }
+
+            return removedTotal;
+        }
+
+        private static List<Container> FindNearbyChests(GameObject target, float range, bool includeVehicles,
+            Func<Container, Vector3, bool> hasAccessAt)
+        {
             // item == cart layermask
             // vehicle == cart&ship layermask
 
@@ -53,8 +102,7 @@ namespace ValheimPlus
                     if (validContainers.Contains(foundContainer))
                         continue;
 
-                    bool hasAccess = foundContainer.CheckAccess(Player.m_localPlayer.GetPlayerID());
-                    if (checkWard) hasAccess = hasAccess && PrivateArea.CheckAccess(hitCollider.gameObject.transform.position, 0f, false, true);
+                    bool hasAccess = hasAccessAt(foundContainer, hitCollider.gameObject.transform.position);
                     var piece = foundContainer.GetComponentInParent<Piece>();
                     var isVagon = foundContainer.GetComponentInParent<Vagon>() != null;
                     var isShip = foundContainer.GetComponentInParent<Ship>() != null;

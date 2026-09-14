@@ -68,9 +68,11 @@ namespace ValheimPlus.GameClasses
             foreach (var item in __instance.m_fuelItems)
             {
                 ItemDrop.ItemData fuelItemData = item.m_itemData;
-                int addedFuel = InventoryAssistant.RemoveItemInAmountFromAllNearbyChests(__instance.gameObject,
-                    Helper.Clamp(Configuration.Current.ShieldGenerator.autoRange, 1, 50), fuelItemData, toMaxFuel,
-                    !Configuration.Current.ShieldGenerator.ignorePrivateAreaCheck);
+                int addedFuel = InventoryAssistant.RemoveItemInAmountFromChests(
+                    InventoryAssistant.GetNearbyChestsForMachine(__instance.gameObject,
+                        Helper.Clamp(Configuration.Current.ShieldGenerator.autoRange, 1, 50),
+                        !Configuration.Current.ShieldGenerator.ignorePrivateAreaCheck),
+                    fuelItemData, toMaxFuel);
                 if (addedFuel < 1) return;
                 for (int i = 0; i < addedFuel; i++) __instance.m_nview.InvokeRPC("RPC_AddFuel");
                 ValheimPlusPlugin.Logger.LogDebug(
