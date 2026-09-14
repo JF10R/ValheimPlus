@@ -23,8 +23,9 @@ namespace ValheimPlus.GameClasses
                && Configuration.Current.Procreation.ignoreHunger
                && IsValidAnimalType(instance.m_character.m_name);
 
-        public static bool IsAlertedWithIgnore(Tameable tameable) =>
-            !IsValidAnimalType(tameable.m_character.m_name) && tameable.m_monsterAI.IsAlerted();
+        // Takes the Procreation that Procreate already has on the stack.
+        public static bool IsAlertedWithIgnore(Procreation procreation) =>
+            !IsValidAnimalType(procreation.m_character.m_name) && procreation.m_baseAI.IsAlerted();
 
         private static string GetPregnantStatus(Procreation procreation)
         {
@@ -115,7 +116,10 @@ namespace ValheimPlus.GameClasses
 
             Helper.applyModifierValueTo(ref __instance.m_partnerCheckRange, config.partnerCheckRangeMultiplier);
             Helper.applyModifierValueTo(ref __instance.m_pregnancyDuration, config.pregnancyDurationMultiplier);
-            Helper.applyModifierValueTo(ref __instance.m_pregnancyChance, config.pregnancyChanceMultiplier);
+            // The game skips a love point when Random.value <= m_pregnancyChance, so scale the success chance.
+            var successChance = Helper.applyModifierValue(1f - __instance.m_pregnancyChance,
+                config.pregnancyChanceMultiplier);
+            __instance.m_pregnancyChance = UnityEngine.Mathf.Clamp01(1f - successChance);
         }
     }
 
