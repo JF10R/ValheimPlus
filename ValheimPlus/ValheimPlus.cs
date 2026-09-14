@@ -22,8 +22,9 @@ namespace ValheimPlus
         BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(ConfigurationManagerWatcher.ShudnalConfigurationManagerGuid,
         BepInDependency.DependencyFlags.SoftDependency)]
-    // We check for conflicts with EquipmentAndQuickSlots, so add this dependency so we load after it.
+    // We check for some mod conflicts, so add this dependency so we load after it.
     [BepInDependency(BepInExConfig.EquipmentAndQuickSlotsGuid, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(BepInExConfig.ExtraSlotsGuid, BepInDependency.DependencyFlags.SoftDependency)]
     public class ValheimPlusPlugin : BaseUnityPlugin
     {
         internal const string ValheimPlusGuid = "org.bepinex.plugins.valheim_plus";

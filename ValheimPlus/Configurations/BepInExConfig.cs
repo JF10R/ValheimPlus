@@ -21,6 +21,7 @@ namespace ValheimPlus.Configurations
         private const string RetiredSuffix = ".migrated";
 
         internal const string EquipmentAndQuickSlotsGuid = "randyknapp.mods.equipmentandquickslots";
+        internal const string ExtraSlotsGuid = "shudnal.ExtraSlots";
 
         /// <summary>The file every section's entries are bound to.</summary>
         public static ConfigFile Config { get; private set; }
@@ -212,16 +213,28 @@ namespace ValheimPlus.Configurations
         /// <summary>Resets settings known to break alongside another installed mod. One block per conflict.</summary>
         private static void ResolveModConflicts()
         {
-            if (Configuration.Current.Inventory.IsEnabled &&
-                Configuration.Current.Inventory.playerInventoryRows > 4 &&
-                Chainloader.PluginInfos.ContainsKey(EquipmentAndQuickSlotsGuid))
+            var configuredRows = Configuration.Current.Inventory.playerInventoryRows;
+            if (Configuration.Current.Inventory.IsEnabled && configuredRows > 4)
             {
-                ResolveModConflict(
-                    $"[Inventory] playerInventoryRows is {Configuration.Current.Inventory.playerInventoryRows}, " +
-                    "which conflicts with Equipment and Quick Slots. Use that mod's " +
-                    "\"Extra Inventory Rows\" setting instead.",
-                    "4",
-                    () => Configuration.Current.Inventory.playerInventoryRows = 4);
+                if (Chainloader.PluginInfos.ContainsKey(EquipmentAndQuickSlotsGuid))
+                {
+                    ResolveModConflict(
+                        $"[Inventory] playerInventoryRows is {configuredRows}, " +
+                        "which conflicts with Equipment and Quick Slots. Use that mod's " +
+                        "\"Extra Inventory Rows\" setting instead.",
+                        "4",
+                        () => Configuration.Current.Inventory.playerInventoryRows = 4);
+                }
+
+                if (Chainloader.PluginInfos.ContainsKey(ExtraSlotsGuid))
+                {
+                    ResolveModConflict(
+                        $"[Inventory] playerInventoryRows is {configuredRows}, " +
+                        "which conflicts with Extra Slots. Use that mod's " +
+                        "\"Extra slots\" setting instead.",
+                        "4",
+                        () => Configuration.Current.Inventory.playerInventoryRows = 4);
+                }
             }
         }
 
