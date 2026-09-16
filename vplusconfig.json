@@ -1128,11 +1128,6 @@
 				"defaultValue": "false",
 				"defaultType": "bool"
 			},
-			"shareAllPins": {
-				"desciption": "This option automatically shares created pins with everyone playing on the server.",
-				"defaultValue": "false",
-				"defaultType": "bool"
-			},
 			"showCartsAndBoats": {
 				"description": "Display carts and boats on the map",
 				"defaultValue": "false",
