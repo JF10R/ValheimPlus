@@ -2,17 +2,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using ValheimPlus.Configurations;
 using ValheimPlus.RPC;
-using ValheimPlus.Utility;
-using Random = UnityEngine.Random;
 
-// ToDo add packet system to convey map markers
 namespace ValheimPlus.GameClasses
 {
     /// <summary>
