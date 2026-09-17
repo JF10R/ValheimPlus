@@ -43,11 +43,11 @@ namespace ValheimPlus.Configurations.Sections
             noWeatherDamageEntry = Bind(config, Section, "noWeatherDamage", false,
                 "Removes the weather damage from rain and water erosion.");
             noHeavySnowDamageEntry = Bind(config, Section, "noHeavySnowDamage", false,
-                "Prevents heavy-snow wear damage while preserving snow buildup, saved snow state, and visual effects.");
+                "Prevents heavy snow damage to structures.");
             noAshDamageEntry = Bind(config, Section, "noAshDamage", false,
-                "Prevents ash wear damage to structures in Ashlands while preserving Ashlands state and visual effects.");
+                "Prevents ash damage to structures.");
             noLavaDamageEntry = Bind(config, Section, "noLavaDamage", false,
-                "Prevents lava wear damage to structures while preserving lava detection and related state.");
+                "Prevents lava damage to structures.");
             maximumPlacementDistanceEntry = Bind(config, Section, "maximumPlacementDistance", 8f,
                 "The maximum range in meters that you can place build objects at inside the hammer build mode.");
             pieceComfortRadiusEntry = Bind(config, Section, "pieceComfortRadius", 10f, 1f, 300f,
