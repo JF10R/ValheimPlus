@@ -115,47 +115,6 @@ namespace ValheimPlus.GameClasses
     }
 
     /// <summary>
-    /// Removes the ash wear damage contribution in <c>WearNTear.UpdateWear</c>.
-    /// </summary>
-    [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.UpdateWear))]
-    public static class WearNTear_UpdateWear_AshDamage_Transpiler
-    {
-        [UsedImplicitly]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var il = instructions.ToList();
-            try
-            {
-                // num += Game.instance.m_ashDamage;
-                return new CodeMatcher(il)
-                    .MatchExactlyOnce(
-                        new CodeMatch(i => i.IsLdloc()),
-                        new CodeMatch(OpCodes.Call, AccessTools.PropertyGetter(typeof(Game), nameof(Game.instance))),
-                        new CodeMatch(i => i.LoadsField(AccessTools.Field(typeof(Game), nameof(Game.m_ashDamage)))),
-                        new CodeMatch(OpCodes.Add))
-                    .Advance(3)
-                    .Insert(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(WearNTear_UpdateWear_AshDamage_Transpiler), nameof(Filter))))
-                    .InstructionEnumeration();
-            }
-            catch (Exception e)
-            {
-                PatchLog.Failed(
-                    nameof(WearNTear_UpdateWear_AshDamage_Transpiler),
-                    "The `noAshDamage` setting will not work; ash will keep damaging structures.",
-                    e);
-                return il;
-            }
-        }
-
-        private static float Filter(float ashDamage)
-        {
-            var config = Configuration.Current.Building;
-            return config.IsEnabled && config.noAshDamage ? 0f : ashDamage;
-        }
-    }
-
-    /// <summary>
     /// Removes the lava wear damage contribution in <c>WearNTear.UpdateWear</c>.
     /// </summary>
     [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.UpdateWear))]
@@ -193,49 +152,6 @@ namespace ValheimPlus.GameClasses
         {
             var config = Configuration.Current.Building;
             return config.IsEnabled && config.noLavaDamage ? 0f : lavaDamage;
-        }
-    }
-
-    /// <summary>
-    /// Removes the ash contribution to the Ashlands damage shader, so that structures no longer look
-    /// scorched once <c>noAshDamage</c> stops the damage itself.
-    /// </summary>
-    [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.UpdateAshlandsMaterialValues))]
-    public static class WearNTear_UpdateAshlandsMaterialValues_AshDamage_Transpiler
-    {
-        [UsedImplicitly]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            var il = instructions.ToList();
-            try
-            {
-                // SetAshlandsMaterialValue(Mathf.Max(m_lavaTimer, Mathf.Max(m_ashDamageTime, m_burnDamageTime)));
-                // Only the m_ashDamageTime term is filtered; burn damage keeps its own visual.
-                return new CodeMatcher(il)
-                    .MatchExactlyOnce(
-                        new CodeMatch(i => i.LoadsField(AccessTools.Field(typeof(WearNTear), "m_ashDamageTime"))),
-                        new CodeMatch(OpCodes.Ldarg_0),
-                        new CodeMatch(i => i.LoadsField(AccessTools.Field(typeof(WearNTear), "m_burnDamageTime"))))
-                    .Advance(1)
-                    .Insert(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(WearNTear_UpdateAshlandsMaterialValues_AshDamage_Transpiler), nameof(Filter))))
-                    .InstructionEnumeration();
-            }
-            catch (Exception e)
-            {
-                PatchLog.Failed(
-                    nameof(WearNTear_UpdateAshlandsMaterialValues_AshDamage_Transpiler),
-                    "The `noAshDamage` setting will still stop the damage, but structures will keep "
-                    + "showing the ash damage material effect.",
-                    e);
-                return il;
-            }
-        }
-
-        private static float Filter(float ashDamageTime)
-        {
-            var config = Configuration.Current.Building;
-            return config.IsEnabled && config.noAshDamage ? 0f : ashDamageTime;
         }
     }
 

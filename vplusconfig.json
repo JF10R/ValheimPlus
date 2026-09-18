@@ -182,11 +182,6 @@
 				"defaultValue": "false",
 				"defaultType": "bool"
 			},
-			"noAshDamage": {
-				"description": "Prevents ash damage to structures.",
-				"defaultValue": "false",
-				"defaultType": "bool"
-			},
 			"noLavaDamage": {
 				"description": "Prevents lava damage to structures.",
 				"defaultValue": "false",

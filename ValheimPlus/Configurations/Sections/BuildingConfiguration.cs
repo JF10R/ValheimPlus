@@ -10,7 +10,6 @@ namespace ValheimPlus.Configurations.Sections
         private ConfigEntry<bool> noMysticalForcesPreventPlacementRestrictionEntry;
         private ConfigEntry<bool> noWeatherDamageEntry;
         private ConfigEntry<bool> noHeavySnowDamageEntry;
-        private ConfigEntry<bool> noAshDamageEntry;
         private ConfigEntry<bool> noLavaDamageEntry;
         private ConfigEntry<float> maximumPlacementDistanceEntry;
         private ConfigEntry<float> pieceComfortRadiusEntry;
@@ -23,7 +22,6 @@ namespace ValheimPlus.Configurations.Sections
         public bool noMysticalForcesPreventPlacementRestriction => noMysticalForcesPreventPlacementRestrictionEntry.Value;
         public bool noWeatherDamage => noWeatherDamageEntry.Value;
         public bool noHeavySnowDamage => noHeavySnowDamageEntry.Value;
-        public bool noAshDamage => noAshDamageEntry.Value;
         public bool noLavaDamage => noLavaDamageEntry.Value;
         public float maximumPlacementDistance => maximumPlacementDistanceEntry.Value;
         public float pieceComfortRadius => pieceComfortRadiusEntry.Value;
@@ -44,8 +42,6 @@ namespace ValheimPlus.Configurations.Sections
                 "Removes the weather damage from rain and water erosion.");
             noHeavySnowDamageEntry = Bind(config, Section, "noHeavySnowDamage", false,
                 "Prevents heavy snow damage to structures.");
-            noAshDamageEntry = Bind(config, Section, "noAshDamage", false,
-                "Prevents ash damage to structures.");
             noLavaDamageEntry = Bind(config, Section, "noLavaDamage", false,
                 "Prevents lava damage to structures.");
             maximumPlacementDistanceEntry = Bind(config, Section, "maximumPlacementDistance", 8f,
