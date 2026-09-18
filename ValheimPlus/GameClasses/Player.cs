@@ -244,6 +244,14 @@ namespace ValheimPlus.GameClasses
                 VPlusMapSync.SendMapToServer();
                 VPlusMapSync.ShouldSyncOnSpawn = false;
             }
+
+            //Only sync on first spawn
+            if (VPlusMapPinSync.ShouldSyncOnSpawn && Configuration.Current.Map.IsEnabled && Configuration.Current.Map.shareAllPins)
+            {
+                //Ask the server for the shared pin list
+                VPlusMapPinSync.RequestSnapshot();
+                VPlusMapPinSync.ShouldSyncOnSpawn = false;
+            }
         }
     }
 
