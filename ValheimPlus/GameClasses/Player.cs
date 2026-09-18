@@ -287,32 +287,40 @@ namespace ValheimPlus.GameClasses
     [HarmonyPatch(typeof(Player), nameof(Player.RemovePiece))]
     public static class Player_RemovePiece_Transpiler
     {
-        private static MethodInfo modifyIsInsideMythicalZone = AccessTools.Method(typeof(Player_RemovePiece_Transpiler), nameof(Player_RemovePiece_Transpiler.IsInsideNoBuildLocation));
-
-        /// <summary>
-        //  Replaces the RemovePiece().Location.IsInsideNoBuildLocation with a stub function
-        /// </summary>
         [HarmonyTranspiler]
+        [UsedImplicitly]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (!Configuration.Current.Building.IsEnabled || !Configuration.Current.Building.noMysticalForcesPreventPlacementRestriction)
+            if (!Configuration.Current.Building.IsEnabled ||
+                !Configuration.Current.Building.noMysticalForcesPreventPlacementRestriction)
                 return instructions;
 
-            List<CodeInstruction> il = instructions.ToList();
-            for (int i = 0; i < il.Count; ++i)
+            var method_Location_IsInsideNoBuildLocation =
+                AccessTools.Method(typeof(Location), nameof(Location.IsInsideNoBuildLocation));
+            var method_ReturnFalse =
+                AccessTools.Method(typeof(Player_RemovePiece_Transpiler), nameof(IsInsideNoBuildLocation));
+
+            var il = instructions.ToList();
+            try
             {
-                if (il[i].operand != null)
-                    // search for every call to the function
-                    if (il[i].operand.ToString().Contains(nameof(Location.IsInsideNoBuildLocation)))
-                    {
-                        il[i] = new CodeInstruction(OpCodes.Call, modifyIsInsideMythicalZone);
-                        // replace every call to the function with the stub
-                    }
+                return new CodeMatcher(il)
+                    .SearchForward(inst => inst.Calls(method_Location_IsInsideNoBuildLocation))
+                    .ThrowIfNotMatch("No match for `Location.IsInsideNoBuildLocation(...)`")
+                    .SetOperandAndAdvance(method_ReturnFalse)
+                    .InstructionEnumeration();
             }
-            return il.AsEnumerable();
+            catch (Exception e)
+            {
+                PatchLog.Failed(
+                    nameof(Player_RemovePiece_Transpiler),
+                    "Building.noMysticalForcesPreventPlacementRestriction will have no effect.",
+                    e);
+                return il;
+            }
         }
 
-        private static bool IsInsideNoBuildLocation(Vector3 point)
+        [UsedImplicitly]
+        private static bool IsInsideNoBuildLocation(Vector3 unused)
         {
             return false;
         }
