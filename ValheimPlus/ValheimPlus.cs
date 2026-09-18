@@ -125,6 +125,7 @@ namespace ValheimPlus
                 {
                     MapSyncSaveTimer.AutoReset = true;
                     MapSyncSaveTimer.Elapsed += (_, _) => VPlusMapSync.SaveMapDataToDisk();
+                    MapSyncSaveTimer.Elapsed += (_, _) => VPlusMapPinSync.SavePinsToDisk();
                 }
 
             }

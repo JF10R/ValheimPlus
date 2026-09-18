@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -200,5 +201,37 @@ namespace ValheimPlus.GameClasses
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Sends pins this player places to the server, which owns the shared list.
+    /// </summary>
+    [HarmonyPatch(typeof(Minimap), nameof(Minimap.AddPin))]
+    public static class Minimap_AddPin_Patch
+    {
+        [UsedImplicitly]
+        private static void Postfix(Minimap.PinData __result) => VPlusMapPinSync.SendAdd(__result);
+    }
+
+    /// <summary>
+    /// Sends pin deletions to the server. A delete applies to every player.
+    /// Both vanilla remove paths funnel through this overload, and ClearPins does not,
+    /// so leaving a world never looks like a deletion.
+    /// </summary>
+    [HarmonyPatch(typeof(Minimap), nameof(Minimap.RemovePin), typeof(Minimap.PinData))]
+    public static class Minimap_RemovePin_Patch
+    {
+        [UsedImplicitly]
+        private static void Prefix(Minimap.PinData pin) => VPlusMapPinSync.SendRemove(pin);
+    }
+
+    /// <summary>
+    /// Drops shared pin state when leaving a world.
+    /// </summary>
+    [HarmonyPatch(typeof(Minimap), "OnDestroy")]
+    public static class Minimap_OnDestroy_PinSync_Patch
+    {
+        [UsedImplicitly]
+        private static void Postfix() => VPlusMapPinSync.Reset();
     }
 }
