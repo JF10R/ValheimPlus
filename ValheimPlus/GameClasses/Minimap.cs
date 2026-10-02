@@ -214,6 +214,43 @@ namespace ValheimPlus.GameClasses
     }
 
     /// <summary>
+    /// Vanilla adds a map-click pin unnamed and names it when the dialog closes, so sharing waits for the name.
+    /// </summary>
+    [HarmonyPatch(typeof(Minimap), "ShowPinNameInput")]
+    public static class Minimap_ShowPinNameInput_Patch
+    {
+        [UsedImplicitly]
+        private static void Prefix() => VPlusMapPinSync.CreatingNamedPin = true;
+
+        [UsedImplicitly]
+        private static void Finalizer() => VPlusMapPinSync.CreatingNamedPin = false;
+    }
+
+    /// <summary>
+    /// Reading a cartography table removes faded pins the table lacks. Keeps that local and restores shared pins.
+    /// </summary>
+    [HarmonyPatch(typeof(Minimap), nameof(Minimap.AddSharedMapData))]
+    public static class Minimap_AddSharedMapData_Patch
+    {
+        [UsedImplicitly]
+        private static void Prefix() => VPlusMapPinSync.BeginMapTableRead();
+
+        [UsedImplicitly]
+        private static void Finalizer() => VPlusMapPinSync.EndMapTableRead();
+    }
+
+    /// <summary>
+    /// Shares the pin held for the name dialog once the dialog lets go of it, whichever way it closed.
+    /// </summary>
+    [HarmonyPatch(typeof(Minimap), "Update")]
+    public static class Minimap_Update_PinSync_Patch
+    {
+        [UsedImplicitly]
+        private static void Postfix(Minimap __instance, Minimap.PinData ___m_namePin) =>
+            VPlusMapPinSync.FlushNamedPin(__instance, ___m_namePin);
+    }
+
+    /// <summary>
     /// Sends pin deletions to the server. A delete applies to every player.
     /// Both vanilla remove paths funnel through this overload, and ClearPins does not,
     /// so leaving a world never looks like a deletion.

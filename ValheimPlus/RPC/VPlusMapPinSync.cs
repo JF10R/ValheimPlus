@@ -43,11 +43,23 @@ namespace ValheimPlus.RPC
         };
 
         private static readonly Dictionary<string, SharedPin> serverPins = new Dictionary<string, SharedPin>();
+
+        /// <summary>Ids deleted on the server, so a player who was offline drops them instead of re-sharing them.</summary>
+        private static readonly HashSet<string> deletedPinIds = new HashSet<string>();
         private static bool serverPinsLoaded;
         private static bool serverPinsDirty;
 
         /// <summary>Set while network pins are being applied, so the Minimap hooks do not echo them back.</summary>
         private static bool applying;
+
+        /// <summary>Set while vanilla merges a cartography table, which drops faded pins the table lacks.</summary>
+        private static bool readingMapTable;
+
+        /// <summary>Set while vanilla creates a map-click pin for the name dialog.</summary>
+        public static bool CreatingNamedPin;
+
+        /// <summary>The pin the name dialog is naming, shared by <see cref="FlushNamedPin"/>.</summary>
+        private static Minimap.PinData namedPin;
 
         /// <summary>Cleared after the first spawn asks for the list, re-armed when leaving a server.</summary>
         public static bool ShouldSyncOnSpawn = true;
@@ -93,15 +105,50 @@ namespace ValheimPlus.RPC
             if (!Enabled || applying || !IsShareable(pin) || ZRoutedRpc.instance == null) return;
             if (pin.m_ownerID != 0L) return; // not ours yet; adopting it is not a new pin
 
+            // The pin id includes the name, which the name dialog has not set yet. FlushNamedPin sends it.
+            if (CreatingNamedPin)
+            {
+                namedPin = pin;
+                return;
+            }
+
+            // Vanilla re-adds the profile's pins before the player spawns. They have no owner yet;
+            // the join snapshot offers the ones the server lacks once the player exists.
+            var ownerId = LocalPlayerId();
+            if (ownerId == 0L) return;
+
             var package = new ZPackage();
-            WritePin(package, PinId(pin), pin.m_name, pin.m_pos, pin.m_type, LocalPlayerId());
+            WritePin(package, PinId(pin), pin.m_name, pin.m_pos, pin.m_type, ownerId);
             Send(AddRpc, package);
+        }
+
+        /// <summary>
+        /// Vanilla treats every faded pin as table data and removes those the table lacks. Shared pins
+        /// are faded too, so those removals must stay local.
+        /// </summary>
+        public static void BeginMapTableRead() => readingMapTable = true;
+
+        /// <summary>Asks for the list again, so shared pins the table read dropped come back.</summary>
+        public static void EndMapTableRead()
+        {
+            readingMapTable = false;
+            RequestSnapshot();
+        }
+
+        /// <summary>Shares the pin held for the name dialog once the dialog no longer holds it.</summary>
+        public static void FlushNamedPin(Minimap minimap, Minimap.PinData dialogPin)
+        {
+            if (namedPin == null || namedPin == dialogPin) return;
+
+            var pin = namedPin;
+            namedPin = null;
+            if (minimap.m_pins.Contains(pin)) SendAdd(pin);
         }
 
         /// <summary>Sends a pin this player just deleted to the server. Deletes apply to everyone.</summary>
         public static void SendRemove(Minimap.PinData pin)
         {
-            if (!Enabled || applying || !IsShareable(pin) || ZRoutedRpc.instance == null) return;
+            if (!Enabled || applying || readingMapTable || !IsShareable(pin) || ZRoutedRpc.instance == null) return;
 
             var package = new ZPackage();
             package.Write(PinId(pin));
@@ -180,6 +227,11 @@ namespace ValheimPlus.RPC
             ValheimPlusPlugin.VPlusDataDirectoryPath + Path.DirectorySeparatorChar +
             ZNet.instance.GetWorldName() + "_mapPins.dat";
 
+        /// <summary>One escaped pin id per line. Separate file so the pin store format is unchanged.</summary>
+        private static string DeletedStorePath =>
+            ValheimPlusPlugin.VPlusDataDirectoryPath + Path.DirectorySeparatorChar +
+            ZNet.instance.GetWorldName() + "_mapPinsDeleted.dat";
+
         /// <summary>
         /// Loads the persisted pin list on first use. Deferred rather than done at start-up because
         /// a dedicated server has no Minimap to hang the load off, and the world name is only known
@@ -192,15 +244,23 @@ namespace ValheimPlus.RPC
 
             try
             {
-                if (!File.Exists(StorePath)) return;
-
-                foreach (var line in File.ReadAllLines(StorePath))
+                if (File.Exists(StorePath))
                 {
-                    var pin = Deserialize(line);
-                    if (pin != null) serverPins[pin.Id] = pin;
+                    foreach (var line in File.ReadAllLines(StorePath))
+                    {
+                        var pin = Deserialize(line);
+                        if (pin != null) serverPins[pin.Id] = pin;
+                    }
                 }
 
-                ValheimPlusPlugin.Logger.LogDebug($"Loaded {serverPins.Count} shared map pins from disk.");
+                if (File.Exists(DeletedStorePath))
+                {
+                    foreach (var line in File.ReadAllLines(DeletedStorePath))
+                        if (line.Length > 0) deletedPinIds.Add(Unescape(line));
+                }
+
+                ValheimPlusPlugin.Logger.LogDebug(
+                    $"Loaded {serverPins.Count} shared map pins and {deletedPinIds.Count} deleted pin ids from disk.");
             }
             catch (Exception e)
             {
@@ -218,8 +278,10 @@ namespace ValheimPlus.RPC
             try
             {
                 File.WriteAllLines(StorePath, serverPins.Values.Select(Serialize).ToArray());
+                File.WriteAllLines(DeletedStorePath, deletedPinIds.Select(Escape).ToArray());
                 serverPinsDirty = false;
-                ValheimPlusPlugin.Logger.LogDebug($"Saved {serverPins.Count} shared map pins to disk.");
+                ValheimPlusPlugin.Logger.LogDebug(
+                    $"Saved {serverPins.Count} shared map pins and {deletedPinIds.Count} deleted pin ids to disk.");
             }
             catch (Exception e)
             {
@@ -328,13 +390,21 @@ namespace ValheimPlus.RPC
             foreach (var pin in serverPins.Values)
                 WritePin(snapshot, pin.Id, pin.Name, pin.Pos, pin.Type, pin.OwnerId);
 
+            snapshot.Write(deletedPinIds.Count);
+            foreach (var id in deletedPinIds)
+                snapshot.Write(id);
+
             ZRoutedRpc.instance.InvokeRoutedRPC(sender, SnapshotRpc, snapshot);
         }
 
-        /// <summary>Client: applies the full pin list, and offers back any pin the server does not have.</summary>
+        /// <summary>
+        /// Client: applies the full pin list, drops local copies of pins deleted while it was away,
+        /// and offers back any other pin the server does not have. The hosting player runs it too,
+        /// since its profile pins are only offered from here.
+        /// </summary>
         public static void RPC_MapPinSnapshot(long sender, ZPackage package)
         {
-            if (!Enabled || IsServer) return;
+            if (!Enabled) return;
             if (sender != ZRoutedRpc.instance.GetServerPeerID()) return;
 
             var known = new HashSet<string>();
@@ -347,8 +417,26 @@ namespace ValheimPlus.RPC
                 ApplyAdd(pin);
             }
 
-            foreach (var pin in LocalShareablePins().Where(pin => !known.Contains(PinId(pin))))
-                SendAdd(pin);
+            var deleted = new HashSet<string>();
+            try
+            {
+                var deletedCount = package.ReadInt();
+                for (var i = 0; i < deletedCount; i++)
+                    deleted.Add(package.ReadString());
+            }
+            catch (Exception e)
+            {
+                // Without the list a deleted pin may be shared again, which is the old behaviour.
+                ValheimPlusPlugin.Logger.LogWarning($"Shared map pin snapshot has no readable delete list. {e.Message}");
+            }
+
+            foreach (var pin in LocalShareablePins())
+            {
+                var id = PinId(pin);
+                if (known.Contains(id)) continue;
+                if (deleted.Contains(id)) ApplyRemove(id);
+                else SendAdd(pin);
+            }
         }
 
         private static void HandleAdd(ZPackage package, bool broadcast)
@@ -358,6 +446,8 @@ namespace ValheimPlus.RPC
             var pin = ReadPin(package);
             if (pin == null || serverPins.ContainsKey(pin.Id)) return;
 
+            // Snapshot holders drop deleted pins instead of offering them, so an add here is a deliberate re-add.
+            deletedPinIds.Remove(pin.Id);
             serverPins[pin.Id] = pin;
             serverPinsDirty = true;
 
@@ -376,6 +466,7 @@ namespace ValheimPlus.RPC
             var id = package.ReadString();
             if (!serverPins.Remove(id)) return;
 
+            deletedPinIds.Add(id);
             serverPinsDirty = true;
 
             if (!broadcast) return;
@@ -430,9 +521,13 @@ namespace ValheimPlus.RPC
         public static void Reset()
         {
             serverPins.Clear();
+            deletedPinIds.Clear();
             serverPinsLoaded = false;
             serverPinsDirty = false;
             applying = false;
+            CreatingNamedPin = false;
+            namedPin = null;
+            readingMapTable = false;
             ShouldSyncOnSpawn = true;
         }
     }

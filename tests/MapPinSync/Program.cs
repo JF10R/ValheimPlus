@@ -46,6 +46,9 @@ internal static class Program
     private static string StoreFile =>
         Path.Combine(ValheimPlusPlugin.VPlusDataDirectoryPath, "TestWorld_mapPins.dat");
 
+    private static string DeletedStoreFile =>
+        Path.Combine(ValheimPlusPlugin.VPlusDataDirectoryPath, "TestWorld_mapPinsDeleted.dat");
+
     /// <summary>
     /// Routes an invoke to the other node and runs the matching production handler there,
     /// then restores the caller's context. This is what the real ZRoutedRpc does across peers.
@@ -95,6 +98,7 @@ internal static class Program
     {
         VPlusMapPinSync.Reset();
         if (!keepDisk && File.Exists(StoreFile)) File.Delete(StoreFile);
+        if (!keepDisk && File.Exists(DeletedStoreFile)) File.Delete(DeletedStoreFile);
         Configuration.Current.Map.IsEnabled = true;
         Configuration.Current.Map.shareAllPins = true;
 
@@ -143,6 +147,14 @@ internal static class Program
         ReceiverDoesNotEchoAnAppliedRemove();
         EmptyPinIdIsRejected();
         RemovedPinDoesNotComeBackAfterARestart();
+        ProfilePinsLoadedBeforeSpawnAreNotSent();
+        HostProfilePinsAreSharedAfterSpawn();
+        DeleteWhileOfflineIsNotUndone();
+        DeleteListSurvivesARestart();
+        ReAddingADeletedPinWorks();
+        MapClickPinIsSharedWithItsName();
+        MapClickPinRemovedBeforeNamingIsNotShared();
+        MapTableReadKeepsSharedPins();
 
         Console.WriteLine(failures == 0 ? "\nALL TESTS PASS" : $"\n{failures} TEST FAILURE(S)");
         return failures;
@@ -601,6 +613,188 @@ internal static class Program
         // The delete has to reach the persisted store, not just the connected clients.
         RestartServerAndSnapshot(out var joiner);
         Check("a deleted pin stays deleted after a restart", joiner.Pin("copper") == null);
+    }
+
+    /// <summary>A client node wired to the server. The server only reaches the nodes passed to <see cref="Online"/>.</summary>
+    private static Node Joiner(long peerId, long playerId)
+    {
+        var node = new Node(server: false, peerId, playerId);
+        node.Rpc.ServerID = ServerPeer;
+        node.Rpc.Router = (target, method, package) => { if (target == ServerPeer) Deliver(server, peerId, method, package); };
+        return node;
+    }
+
+    private static void Online(params (Node node, long peer)[] nodes)
+    {
+        server.Rpc.Router = (target, method, package) =>
+        {
+            if (target == ServerPeer) Deliver(server, ServerPeer, method, package);
+            foreach (var (node, peer) in nodes)
+                if (target == ZRoutedRpc.Everybody || target == peer) Deliver(node, ServerPeer, method, package);
+        };
+    }
+
+    private static void ProfilePinsLoadedBeforeSpawnAreNotSent()
+    {
+        Setup();
+        // Vanilla re-adds the profile's pins before the player exists; the postfix sees them all.
+        client.LocalPlayer = null;
+        client.Enter();
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon1, "house", save: true, isChecked: false);
+        Check("a profile pin is not sent before spawn",
+            client.Rpc.Calls.Count(c => c.Method == VPlusMapPinSync.AddRpc) == 0);
+
+        client.LocalPlayer = new Player(ClientPlayer);
+        client.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        var other = Joiner(3, 1003);
+        Online((client, ClientPeer), (other, 3));
+        other.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+        Check("the profile pin is offered once the player exists", other.Pin("house") != null);
+        Check("it carries its owner, so others see it faded", other.Pin("house")?.m_ownerID == ClientPlayer);
+    }
+
+    private static void HostProfilePinsAreSharedAfterSpawn()
+    {
+        Setup();
+        server.LocalPlayer = null;
+        server.Enter();
+        server.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon1, "host-house", save: true, isChecked: false);
+
+        Online((client, ClientPeer));
+        server.LocalPlayer = new Player(ServerPlayer);
+        server.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        Check("a hosting player's profile pin reaches clients after spawn", client.Pin("host-house") != null);
+        Check("and arrives faded with the host as owner", client.Pin("host-house")?.m_ownerID == ServerPlayer);
+    }
+
+    private static void DeleteWhileOfflineIsNotUndone()
+    {
+        Setup();
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon0, "copper", save: true, isChecked: false);
+
+        // The author leaves; another player deletes the pin.
+        var other = Joiner(3, 1003);
+        Online((other, 3));
+        other.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+        other.Map.RemovePin(other.Pin("copper"));
+
+        // The author comes back still holding the pin in their profile.
+        Online((client, ClientPeer), (other, 3));
+        client.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        Check("a returning holder does not re-share a deleted pin", server.Pin("copper") == null);
+        Check("a returning holder drops its own copy", client.Pin("copper") == null);
+        Check("the deleter does not get it back", other.Pin("copper") == null);
+    }
+
+    private static void DeleteListSurvivesARestart()
+    {
+        Setup();
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon0, "copper", save: true, isChecked: false);
+        var other = Joiner(3, 1003);
+        Online((client, ClientPeer), (other, 3));
+        other.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        // The other player goes offline, the author deletes, the server restarts.
+        Online((client, ClientPeer));
+        client.Enter();
+        client.Map.RemovePin(client.Pin("copper"));
+        server.Enter();
+        VPlusMapPinSync.SavePinsToDisk();
+
+        var otherMap = other.Map;
+        Setup(keepDisk: true);
+        var returning = Joiner(3, 1003);
+        returning.Map = otherMap;
+        Online((returning, 3));
+        returning.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        Check("a delete made before a restart still reaches an offline holder", returning.Pin("copper") == null);
+        Check("and the pin is not re-shared", server.Pin("copper") == null);
+    }
+
+    /// <summary>Mirrors Minimap.ShowPinNameInput: vanilla adds the map-click pin unnamed.</summary>
+    private static Minimap.PinData OpenNameDialog(Node node, Vector3 pos)
+    {
+        node.Enter();
+        VPlusMapPinSync.CreatingNamedPin = true;
+        try { return node.Map.AddPin(pos, Minimap.PinType.Icon3, "", save: true, isChecked: false); }
+        finally { VPlusMapPinSync.CreatingNamedPin = false; }
+    }
+
+    private static void MapClickPinIsSharedWithItsName()
+    {
+        Setup();
+        var other = Joiner(3, 1003);
+        Online((client, ClientPeer), (other, 3));
+        other.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        var pin = OpenNameDialog(client, new Vector3(10, 0, 10));
+        VPlusMapPinSync.FlushNamedPin(client.Map, pin);
+        Check("a map-click pin is not shared while its name dialog is open",
+            client.Rpc.Calls.Count(c => c.Method == VPlusMapPinSync.AddRpc) == 0);
+
+        pin.m_name = "copper"; // OnPinTextEntered
+        VPlusMapPinSync.FlushNamedPin(client.Map, null);
+        Check("it is shared with its name once the dialog closes", other.Pin("copper") != null);
+        Check("no unnamed copy reaches the other player", other.Pin("") == null);
+
+        client.Enter();
+        client.Map.RemovePin(pin);
+        Check("deleting the named pin removes it for the other player", other.Pin("copper") == null);
+        Check("and from the server", server.Pin("copper") == null);
+    }
+
+    private static void MapClickPinRemovedBeforeNamingIsNotShared()
+    {
+        Setup();
+        var pin = OpenNameDialog(client, new Vector3(10, 0, 10));
+        client.Map.RemovePin(pin);
+        VPlusMapPinSync.FlushNamedPin(client.Map, null);
+
+        Check("a pin removed before its dialog closed is never shared",
+            client.Rpc.Calls.Count(c => c.Method == VPlusMapPinSync.AddRpc) == 0 && server.Map.m_pins.Count == 0);
+    }
+
+    private static void MapTableReadKeepsSharedPins()
+    {
+        Setup();
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon0, "copper", save: true, isChecked: false);
+        var other = Joiner(3, 1003);
+        Online((client, ClientPeer), (other, 3));
+        other.Enter();
+        VPlusMapPinSync.RequestSnapshot();
+
+        // Mirrors Minimap.AddSharedMapData: a table without this pin removes the faded copy.
+        VPlusMapPinSync.BeginMapTableRead();
+        other.Map.RemovePin(other.Pin("copper"));
+        VPlusMapPinSync.EndMapTableRead();
+
+        Check("reading a map table does not delete a shared pin", server.Pin("copper") != null);
+        Check("the author keeps it", client.Pin("copper") != null);
+        Check("the reader gets it back, still faded", other.Pin("copper")?.m_ownerID == ClientPlayer);
+    }
+
+    private static void ReAddingADeletedPinWorks()
+    {
+        Setup();
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon0, "copper", save: true, isChecked: false);
+        client.Map.RemovePin(client.Pin("copper"));
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon0, "copper", save: true, isChecked: false);
+        Check("placing a deleted pin again shares it", server.Pin("copper") != null);
+
+        RestartServerAndSnapshot(out var joiner);
+        Check("the re-added pin survives a restart", joiner.Pin("copper") != null);
     }
 
     private static void Check(string name, bool ok)

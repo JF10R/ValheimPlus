@@ -21,12 +21,16 @@ A pin from another player is added with a non-zero `m_ownerID`, which is how van
 not mod code, so it is not covered here.
 
 Deletes are global: removing a pin removes it for everyone, whether or not it was adopted first.
+The server keeps deleted ids in `<World>_mapPinsDeleted.dat` and sends them in the join snapshot,
+so a player who was offline drops their copy instead of sharing it again.
 
 ## Covered
 
 Pin filtering, add propagation, fading and ownership, echo-loop suppression, duplicate
 suppression, delete propagation (adopted and faded), join snapshots, seeding the server from
-pins that predate the setting, the persistence round trip across a restart, malformed packets,
+pins that predate the setting, profile pins loaded before spawn, deletes made while a holder was
+offline (also across a restart), re-adding a deleted pin, map-click pins named after the dialog,
+cartography table reads, the persistence round trip across a restart, malformed packets,
 and the setting being off.
 
 ## Not covered — needs two clients in-game
