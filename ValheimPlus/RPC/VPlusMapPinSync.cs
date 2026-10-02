@@ -44,7 +44,9 @@ namespace ValheimPlus.RPC
 
         private static readonly Dictionary<string, SharedPin> serverPins = new Dictionary<string, SharedPin>();
 
-        /// <summary>Ids deleted on the server, so a player who was offline drops them instead of re-sharing them.</summary>
+        /// <summary>
+        /// Ids deleted on the server, so a player who was offline drops them instead of re-sharing them.
+        /// </summary>
         private static readonly HashSet<string> deletedPinIds = new HashSet<string>();
         private static bool serverPinsLoaded;
         private static bool serverPinsDirty;
@@ -427,7 +429,8 @@ namespace ValheimPlus.RPC
             catch (Exception e)
             {
                 // Without the list a deleted pin may be shared again, which is the old behaviour.
-                ValheimPlusPlugin.Logger.LogWarning($"Shared map pin snapshot has no readable delete list. {e.Message}");
+                ValheimPlusPlugin.Logger.LogWarning(
+                    $"Shared map pin snapshot has no readable delete list. {e.Message}");
             }
 
             foreach (var pin in LocalShareablePins())

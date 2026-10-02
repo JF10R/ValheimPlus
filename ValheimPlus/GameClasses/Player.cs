@@ -228,7 +228,8 @@ namespace ValheimPlus.GameClasses
             }
 
             //Only sync on first spawn
-            if (VPlusMapPinSync.ShouldSyncOnSpawn && Configuration.Current.Map.IsEnabled && Configuration.Current.Map.shareAllPins)
+            if (VPlusMapPinSync.ShouldSyncOnSpawn && Configuration.Current.Map.IsEnabled &&
+                Configuration.Current.Map.shareAllPins)
             {
                 //Ask the server for the shared pin list
                 VPlusMapPinSync.RequestSnapshot();

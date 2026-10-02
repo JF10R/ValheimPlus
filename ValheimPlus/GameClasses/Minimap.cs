@@ -216,7 +216,7 @@ namespace ValheimPlus.GameClasses
     /// <summary>
     /// Vanilla adds a map-click pin unnamed and names it when the dialog closes, so sharing waits for the name.
     /// </summary>
-    [HarmonyPatch(typeof(Minimap), "ShowPinNameInput")]
+    [HarmonyPatch(typeof(Minimap), nameof(Minimap.ShowPinNameInput))]
     public static class Minimap_ShowPinNameInput_Patch
     {
         [UsedImplicitly]
@@ -242,8 +242,8 @@ namespace ValheimPlus.GameClasses
     /// <summary>
     /// Shares the pin held for the name dialog once the dialog lets go of it, whichever way it closed.
     /// </summary>
-    [HarmonyPatch(typeof(Minimap), "Update")]
-    public static class Minimap_Update_PinSync_Patch
+    [HarmonyPatch(typeof(Minimap), nameof(Minimap.Update))]
+    public static class Minimap_Update_Patch
     {
         [UsedImplicitly]
         private static void Postfix(Minimap __instance, Minimap.PinData ___m_namePin) =>
@@ -265,7 +265,7 @@ namespace ValheimPlus.GameClasses
     /// <summary>
     /// Drops shared pin state when leaving a world.
     /// </summary>
-    [HarmonyPatch(typeof(Minimap), "OnDestroy")]
+    [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnDestroy))]
     public static class Minimap_OnDestroy_PinSync_Patch
     {
         [UsedImplicitly]
