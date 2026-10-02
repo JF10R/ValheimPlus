@@ -155,6 +155,9 @@ internal static class Program
         MapClickPinIsSharedWithItsName();
         MapClickPinRemovedBeforeNamingIsNotShared();
         MapTableReadKeepsSharedPins();
+        PinIdMustMatchItsFields();
+        OwnerZeroIsRejected();
+        MalformedRemoveIsDiscarded();
 
         Console.WriteLine(failures == 0 ? "\nALL TESTS PASS" : $"\n{failures} TEST FAILURE(S)");
         return failures;
@@ -783,6 +786,60 @@ internal static class Program
         Check("reading a map table does not delete a shared pin", server.Pin("copper") != null);
         Check("the author keeps it", client.Pin("copper") != null);
         Check("the reader gets it back, still faded", other.Pin("copper")?.m_ownerID == ClientPlayer);
+    }
+
+    /// <summary>An add packet whose fields are valid, with the id and owner left to the caller.</summary>
+    private static ZPackage AddPacket(string id, long ownerId)
+    {
+        var package = new ZPackage();
+        package.Write(id);
+        package.Write("copper");
+        package.Write(new Vector3(10, 0, 10));
+        package.Write((int)Minimap.PinType.Icon0);
+        package.Write(ownerId);
+        return package;
+    }
+
+    private static void PinIdMustMatchItsFields()
+    {
+        Setup();
+        Deliver(server, ClientPeer, VPlusMapPinSync.AddRpc, AddPacket("0|99.0|99.0|other", ClientPlayer));
+        Check("a pin whose id does not match its fields is rejected",
+            server.Map.m_pins.Count == 0 &&
+            server.Rpc.Calls.Count(c => c.Method == VPlusMapPinSync.AddRpc) == 0);
+
+        Deliver(server, ClientPeer, VPlusMapPinSync.AddRpc, AddPacket("0|10.0|10.0|copper", ClientPlayer));
+        Check("the same pin with its canonical id is accepted", server.Pin("copper") != null);
+    }
+
+    private static void OwnerZeroIsRejected()
+    {
+        Setup();
+        Deliver(server, ClientPeer, VPlusMapPinSync.AddRpc, AddPacket("0|10.0|10.0|copper", 0L));
+        Check("a pin claiming no owner is rejected",
+            server.Map.m_pins.Count == 0 &&
+            server.Rpc.Calls.Count(c => c.Method == VPlusMapPinSync.AddRpc) == 0);
+    }
+
+    private static void MalformedRemoveIsDiscarded()
+    {
+        Setup();
+        client.Map.AddPin(new Vector3(10, 0, 10), Minimap.PinType.Icon0, "copper", save: true, isChecked: false);
+
+        var threw = false;
+        try
+        {
+            Deliver(server, ClientPeer, VPlusMapPinSync.RemoveRpc, new ZPackage());
+            Deliver(client, ServerPeer, VPlusMapPinSync.RemoveRpc, new ZPackage());
+            Deliver(client, ServerPeer, VPlusMapPinSync.SnapshotRpc, new ZPackage());
+        }
+        catch (Exception)
+        {
+            threw = true;
+        }
+
+        Check("short remove and snapshot packets are discarded without throwing", !threw);
+        Check("and change nothing", server.Pin("copper") != null && client.Pin("copper") != null);
     }
 
     private static void ReAddingADeletedPinWorks()

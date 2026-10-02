@@ -30,7 +30,8 @@ Pin filtering, add propagation, fading and ownership, echo-loop suppression, dup
 suppression, delete propagation (adopted and faded), join snapshots, seeding the server from
 pins that predate the setting, profile pins loaded before spawn, deletes made while a holder was
 offline (also across a restart), re-adding a deleted pin, map-click pins named after the dialog,
-cartography table reads, the persistence round trip across a restart, malformed packets,
+cartography table reads, ids that do not match their fields, adds claiming owner 0, short remove
+and snapshot packets, the persistence round trip across a restart, malformed packets,
 and the setting being off.
 
 ## Not covered — needs two clients in-game

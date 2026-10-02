@@ -62,17 +62,21 @@ namespace ValheimPlus.GameClasses
     {
         private static void Postfix()
         {
-            if (ZNet.m_isServer && Configuration.Current.Map.IsEnabled && Configuration.Current.Map.shareMapProgression)
+            var map = Configuration.Current.Map;
+            if (!ZNet.m_isServer || !map.IsEnabled) return;
+
+            if (map.shareMapProgression)
             {
                 //Init map array
                 VPlusMapSync.ServerMapData = new BitArray(Minimap.instance.m_textureSize * Minimap.instance.m_textureSize);
 
                 //Load map data from disk
                 VPlusMapSync.LoadMapDataFromDisk();
-
-                //Start map data save timer
-                ValheimPlusPlugin.MapSyncSaveTimer.Start();
             }
+
+            //Start the save timer, which also saves shared map pins
+            if (map.shareMapProgression || map.shareAllPins)
+                ValheimPlusPlugin.MapSyncSaveTimer.Start();
         }
     }
 

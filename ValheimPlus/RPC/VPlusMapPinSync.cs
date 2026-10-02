@@ -51,6 +51,14 @@ namespace ValheimPlus.RPC
         private static bool serverPinsLoaded;
         private static bool serverPinsDirty;
 
+        /// <summary>
+        /// Guards the server store. The save timer runs on a worker thread; RPCs and shutdown run on the game thread.
+        /// </summary>
+        private static readonly object storeLock = new object();
+
+        /// <summary>Serializes file writes between the save timer and shutdown.</summary>
+        private static readonly object saveLock = new object();
+
         /// <summary>Set while network pins are being applied, so the Minimap hooks do not echo them back.</summary>
         private static bool applying;
 
@@ -79,9 +87,11 @@ namespace ValheimPlus.RPC
         /// name the pin it is deleting, so the id is derived from what every copy agrees on.
         /// Position is rounded to a tenth of a metre to absorb float drift over the wire.
         /// </summary>
-        private static string PinId(Minimap.PinData pin) =>
+        private static string PinId(Minimap.PinType type, Vector3 pos, string name) =>
             string.Format(CultureInfo.InvariantCulture, "{0}|{1:F1}|{2:F1}|{3}",
-                (int)pin.m_type, pin.m_pos.x, pin.m_pos.z, pin.m_name ?? string.Empty);
+                (int)type, pos.x, pos.z, name ?? string.Empty);
+
+        private static string PinId(Minimap.PinData pin) => PinId(pin.m_type, pin.m_pos, pin.m_name);
 
         private sealed class SharedPin
         {
@@ -241,55 +251,74 @@ namespace ValheimPlus.RPC
         /// </summary>
         private static void EnsureLoaded()
         {
-            if (serverPinsLoaded) return;
-            serverPinsLoaded = true;
-
-            try
+            lock (storeLock)
             {
-                if (File.Exists(StorePath))
+                if (serverPinsLoaded) return;
+                serverPinsLoaded = true;
+
+                try
                 {
-                    foreach (var line in File.ReadAllLines(StorePath))
+                    if (File.Exists(StorePath))
                     {
-                        var pin = Deserialize(line);
-                        if (pin != null) serverPins[pin.Id] = pin;
+                        foreach (var line in File.ReadAllLines(StorePath))
+                        {
+                            var pin = Deserialize(line);
+                            if (pin != null) serverPins[pin.Id] = pin;
+                        }
                     }
-                }
 
-                if (File.Exists(DeletedStorePath))
+                    if (File.Exists(DeletedStorePath))
+                    {
+                        foreach (var line in File.ReadAllLines(DeletedStorePath))
+                            if (line.Length > 0) deletedPinIds.Add(Unescape(line));
+                    }
+
+                    ValheimPlusPlugin.Logger.LogDebug($"Loaded {serverPins.Count} shared map pins and " +
+                                                      $"{deletedPinIds.Count} deleted pin ids from disk.");
+                }
+                catch (Exception e)
                 {
-                    foreach (var line in File.ReadAllLines(DeletedStorePath))
-                        if (line.Length > 0) deletedPinIds.Add(Unescape(line));
+                    ValheimPlusPlugin.Logger.LogError(
+                        $"Failed to read the shared map pin store. Pins shared before this restart will not " +
+                        $"appear, and saving may overwrite them. Exception is:\n{e}");
                 }
-
-                ValheimPlusPlugin.Logger.LogDebug(
-                    $"Loaded {serverPins.Count} shared map pins and {deletedPinIds.Count} deleted pin ids from disk.");
-            }
-            catch (Exception e)
-            {
-                ValheimPlusPlugin.Logger.LogError(
-                    $"Failed to read the shared map pin store. Pins shared before this restart will not " +
-                    $"appear, and saving may overwrite them. Exception is:\n{e}");
             }
         }
 
-        /// <summary>Writes the pin list to disk. Called on the map sync timer and on shutdown.</summary>
+        /// <summary>
+        /// Writes the pin list to disk. Called on the map sync timer's worker thread and on shutdown, so the
+        /// lines are copied and the dirty flag cleared under the store lock; a later change marks it dirty again.
+        /// </summary>
         public static void SavePinsToDisk()
         {
-            if (!Enabled || !IsServer || !serverPinsLoaded || !serverPinsDirty) return;
+            if (!Enabled || !IsServer) return;
 
-            try
+            lock (saveLock)
             {
-                File.WriteAllLines(StorePath, serverPins.Values.Select(Serialize).ToArray());
-                File.WriteAllLines(DeletedStorePath, deletedPinIds.Select(Escape).ToArray());
-                serverPinsDirty = false;
-                ValheimPlusPlugin.Logger.LogDebug(
-                    $"Saved {serverPins.Count} shared map pins and {deletedPinIds.Count} deleted pin ids to disk.");
-            }
-            catch (Exception e)
-            {
-                ValheimPlusPlugin.Logger.LogError(
-                    $"Failed to write the shared map pin store. Pins shared this session will be lost when " +
-                    $"the server stops. Exception is:\n{e}");
+                string[] pinLines;
+                string[] deletedLines;
+                lock (storeLock)
+                {
+                    if (!serverPinsLoaded || !serverPinsDirty) return;
+                    pinLines = serverPins.Values.Select(Serialize).ToArray();
+                    deletedLines = deletedPinIds.Select(Escape).ToArray();
+                    serverPinsDirty = false;
+                }
+
+                try
+                {
+                    File.WriteAllLines(StorePath, pinLines);
+                    File.WriteAllLines(DeletedStorePath, deletedLines);
+                    ValheimPlusPlugin.Logger.LogDebug(
+                        $"Saved {pinLines.Length} shared map pins and {deletedLines.Length} deleted pin ids to disk.");
+                }
+                catch (Exception e)
+                {
+                    lock (storeLock) serverPinsDirty = true;
+                    ValheimPlusPlugin.Logger.LogError(
+                        $"Failed to write the shared map pin store. Pins shared this session will be lost when " +
+                        $"the server stops. Exception is:\n{e}");
+                }
             }
         }
 
@@ -377,7 +406,11 @@ namespace ValheimPlus.RPC
             if (!Enabled) return;
 
             if (IsServer) HandleRemove(package, broadcast: true);
-            else if (sender == ZRoutedRpc.instance.GetServerPeerID()) ApplyRemove(package.ReadString());
+            else if (sender == ZRoutedRpc.instance.GetServerPeerID())
+            {
+                var id = ReadPinId(package);
+                if (id != null) ApplyRemove(id);
+            }
         }
 
         /// <summary>Server: answers a joining client with the whole pin list.</summary>
@@ -410,7 +443,17 @@ namespace ValheimPlus.RPC
             if (sender != ZRoutedRpc.instance.GetServerPeerID()) return;
 
             var known = new HashSet<string>();
-            var count = package.ReadInt();
+            int count;
+            try
+            {
+                count = package.ReadInt();
+            }
+            catch (Exception e)
+            {
+                ValheimPlusPlugin.Logger.LogWarning($"Discarded an empty shared map pin snapshot. {e.Message}");
+                return;
+            }
+
             for (var i = 0; i < count; i++)
             {
                 var pin = ReadPin(package);
@@ -447,12 +490,20 @@ namespace ValheimPlus.RPC
             EnsureLoaded();
 
             var pin = ReadPin(package);
-            if (pin == null || serverPins.ContainsKey(pin.Id)) return;
+            if (pin == null) return;
 
-            // Snapshot holders drop deleted pins instead of offering them, so an add here is a deliberate re-add.
-            deletedPinIds.Remove(pin.Id);
-            serverPins[pin.Id] = pin;
-            serverPinsDirty = true;
+            // Senders always stamp their own player id; owner 0 would show the pin as everyone's own.
+            if (pin.OwnerId == 0L) return;
+
+            lock (storeLock)
+            {
+                if (serverPins.ContainsKey(pin.Id)) return;
+
+                // Snapshot holders drop deleted pins instead of offering them, so an add here is a deliberate re-add.
+                deletedPinIds.Remove(pin.Id);
+                serverPins[pin.Id] = pin;
+                serverPinsDirty = true;
+            }
 
             if (!broadcast) return;
 
@@ -466,11 +517,16 @@ namespace ValheimPlus.RPC
         {
             EnsureLoaded();
 
-            var id = package.ReadString();
-            if (!serverPins.Remove(id)) return;
+            var id = ReadPinId(package);
+            if (id == null) return;
 
-            deletedPinIds.Add(id);
-            serverPinsDirty = true;
+            lock (storeLock)
+            {
+                if (!serverPins.Remove(id)) return;
+
+                deletedPinIds.Add(id);
+                serverPinsDirty = true;
+            }
 
             if (!broadcast) return;
 
@@ -515,7 +571,25 @@ namespace ValheimPlus.RPC
             if (string.IsNullOrEmpty(pin.Id)) return null;
             if (!ShareableTypes.Contains(pin.Type)) return null;
             if (!IsFinite(pin.Pos.x) || !IsFinite(pin.Pos.y) || !IsFinite(pin.Pos.z)) return null;
+
+            // Every lookup recomputes the id from these fields, so a pin carrying any other id could never be removed.
+            if (pin.Id != PinId(pin.Type, pin.Pos, pin.Name)) return null;
             return pin;
+        }
+
+        /// <summary>Reads the pin id of a remove packet, or null when the packet is short or corrupt.</summary>
+        private static string ReadPinId(ZPackage package)
+        {
+            try
+            {
+                var id = package.ReadString();
+                return string.IsNullOrEmpty(id) ? null : id;
+            }
+            catch (Exception e)
+            {
+                ValheimPlusPlugin.Logger.LogWarning($"Discarded a malformed shared map pin removal. {e.Message}");
+                return null;
+            }
         }
 
         private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
@@ -523,10 +597,13 @@ namespace ValheimPlus.RPC
         /// <summary>Drops per-session state when leaving a world.</summary>
         public static void Reset()
         {
-            serverPins.Clear();
-            deletedPinIds.Clear();
-            serverPinsLoaded = false;
-            serverPinsDirty = false;
+            lock (storeLock)
+            {
+                serverPins.Clear();
+                deletedPinIds.Clear();
+                serverPinsLoaded = false;
+                serverPinsDirty = false;
+            }
             applying = false;
             CreatingNamedPin = false;
             namedPin = null;
